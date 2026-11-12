@@ -18,6 +18,13 @@ Commands: `pnpm dev:services` (Postgres + Redis in Docker), `pnpm dev`, `pnpm li
 
 Versions: TypeScript stays on 6.0.x because typescript-eslint doesn't support 7 yet. ESLint stays on 9 because the eslint-config-next plugins don't support 10.
 
+## Design system
+- Tokens: `packages/ui/src/styles/theme.css`. Palette "walnut-tan" (dealt by the taste skill): deck (dark) is the default look, `.band-parchment` / `[data-theme="light"]` is the parchment look. Use the shadcn token names (`bg-background`, `text-muted-foreground`, `bg-primary`...), never raw hex in components.
+- Type: Fraunces (display, `font-display`, h1/h2), Mona Sans (UI/body), Geist Mono (labels, numbers). Scale: `text-display`, `text-h2`, `text-h3`, `text-lead`.
+- Motion: `MotionProvider` (Lenis on the GSAP ticker), `Enter` (hero entrance, once), `WordHighlight` (statement moment), ReactBits `split-text`. Hover layer utilities: `lift`, `zoom-frame`, `link-draw`. No scroll fade-ins, no tilt, no parallax on text. Everything rests under reduced motion and nothing is hidden without JS.
+- Art: public-domain marine paintings in `apps/web/public/art` (credited in the footer). Never Sea of Thieves assets.
+- Buttons: one family (`@plunderclips/ui/components/button`), 44px minimum tap height.
+
 ## Skill routing (avoid overlap)
 | Need | Use | Don't |
 |---|---|---|

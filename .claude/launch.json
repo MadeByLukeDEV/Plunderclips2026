@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "web",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@plunderclips/web", "exec", "next", "dev", "-p", "3300"],
+      "port": 3300
+    },
+    {
+      "name": "web-prod",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@plunderclips/web", "exec", "next", "start", "-p", "3301"],
+      "port": 3301
+    }
+  ]
+}

@@ -1,0 +1,245 @@
+/*
+  Plunderclips theme. Palette dealt by the taste skill: "walnut-tan" (ship-deck wood, bone ink, brass).
+  Dark ("deck") is the primary look; [data-theme="light"] is the parchment look.
+  Every colour is a token; components use the shadcn names mapped below.
+*/
+@custom-variant dark (&:where(:root:not([data-theme="light"]) *));
+
+:root {
+  /* palette (deck) */
+  --p-bg: #2b2216;
+  --p-surface: #382d1e;
+  --p-surface-2: #44372a;
+  --p-ink: #e4e2da;
+  --p-muted: #a39a8b;
+  --p-accent: #bda38b;
+  --p-accent-ink: #2b2216;
+  --p-danger: #d9775f;
+
+  /* parchment, used by [data-theme="light"] and .band-parchment */
+  --p-inv-bg: #bda38b;
+  --p-inv-surface: #af9781;
+  --p-inv-ink: #111111;
+  --p-inv-muted: #36312c;
+  --p-inv-accent: #111111;
+  --p-inv-accent-ink: #bda38b;
+
+  --background: var(--p-bg);
+  --foreground: var(--p-ink);
+  --card: var(--p-surface);
+  --card-foreground: var(--p-ink);
+  --popover: var(--p-surface);
+  --popover-foreground: var(--p-ink);
+  --primary: var(--p-accent);
+  --primary-foreground: var(--p-accent-ink);
+  --secondary: var(--p-surface-2);
+  --secondary-foreground: var(--p-ink);
+  --muted: var(--p-surface);
+  --muted-foreground: var(--p-muted);
+  --accent: var(--p-surface-2);
+  --accent-foreground: var(--p-ink);
+  --destructive: var(--p-danger);
+  --border: color-mix(in oklab, var(--p-ink) 14%, transparent);
+  --input: color-mix(in oklab, var(--p-ink) 20%, transparent);
+  --ring: var(--p-accent);
+
+  --radius: 0.75rem;
+  --header-h: 72px;
+  --gutter: clamp(16px, 4vw, 80px);
+  --wrap: 1280px;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast: 160ms;
+  --dur: 280ms;
+
+  color-scheme: dark;
+}
+
+:root[data-theme="light"],
+.band-parchment {
+  --background: var(--p-inv-bg);
+  --foreground: var(--p-inv-ink);
+  --card: var(--p-inv-surface);
+  --card-foreground: var(--p-inv-ink);
+  --popover: var(--p-inv-surface);
+  --popover-foreground: var(--p-inv-ink);
+  --primary: var(--p-inv-accent);
+  --primary-foreground: var(--p-inv-accent-ink);
+  --secondary: var(--p-inv-surface);
+  --secondary-foreground: var(--p-inv-ink);
+  --muted: var(--p-inv-surface);
+  --muted-foreground: var(--p-inv-muted);
+  --accent: var(--p-inv-surface);
+  --accent-foreground: var(--p-inv-ink);
+  --border: color-mix(in oklab, var(--p-inv-ink) 18%, transparent);
+  --input: color-mix(in oklab, var(--p-inv-ink) 24%, transparent);
+  --ring: var(--p-inv-ink);
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-mona), system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, Menlo, Consolas, monospace;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 12px);
+
+  --text-display: clamp(2.5rem, 1.6rem + 3.8vw, 4.5rem);
+  --text-display--line-height: 1.02;
+  --text-h2: clamp(2rem, 1.5rem + 2vw, 3.25rem);
+  --text-h2--line-height: 1.08;
+  --text-h3: clamp(1.25rem, 1.1rem + 0.5vw, 1.5rem);
+  --text-h3--line-height: 1.25;
+  --text-lead: clamp(1.0625rem, 1rem + 0.3vw, 1.25rem);
+  --text-lead--line-height: 1.5;
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01";
+  }
+  h1,
+  h2,
+  .font-display {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-variation-settings:
+      "opsz" 96,
+      "SOFT" 50;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+  ::selection {
+    background: var(--p-accent);
+    color: var(--p-accent-ink);
+  }
+}
+
+/* Layout: one .wrap for header, sections and footer (no padding: its box is the content lines),
+   a 12-column grid with a 24px gap (12px under 640), and screen-tall sections under a fixed header. */
+@utility wrap {
+  width: min(100% - 2 * var(--gutter), var(--wrap));
+  margin-inline: auto;
+}
+@utility grid-12 {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  column-gap: 24px;
+  row-gap: 24px;
+  @media (max-width: 639px) {
+    column-gap: 12px;
+    row-gap: 12px;
+  }
+}
+/* A section is exactly one screen at desktop (header over its top padding); on a phone at least one. */
+@utility screen {
+  display: flex;
+  min-height: 100svh;
+  padding-top: calc(var(--header-h) + 48px);
+  padding-bottom: 64px;
+  @media (max-width: 767px) {
+    padding-top: calc(var(--header-h) + 32px);
+    padding-bottom: 48px;
+  }
+}
+
+/* Hover/press layer (taste rule 5): lift, zoom, step, underline draw. Nothing tilts. */
+@utility lift {
+  transition:
+    transform var(--dur) var(--ease-out),
+    box-shadow var(--dur) var(--ease-out);
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px -16px rgb(0 0 0 / 0.6);
+  }
+}
+@utility zoom-frame {
+  overflow: hidden;
+  & img {
+    transition: transform 600ms var(--ease-out);
+  }
+  &:hover img {
+    transform: scale(1.03);
+  }
+}
+@utility link-draw {
+  background: linear-gradient(currentColor, currentColor) no-repeat 0 100% / 0% 1px;
+  transition: background-size var(--dur) var(--ease-out);
+  &:hover,
+  &:focus-visible {
+    background-size: 100% 1px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0ms !important;
+    animation-duration: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ReactBits SplitText: hide its text only while JS is about to split it */
+html.js [data-split-pending] {
+  visibility: hidden;
+}
+
+/* Lenis */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
