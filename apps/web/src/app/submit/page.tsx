@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { connection } from "next/server";
 import { getSession } from "@plunderclips/identity";
+import { env } from "@plunderclips/shared";
 import { SubmitForm } from "@/components/clips/submit-form";
 
 export const metadata: Metadata = {
@@ -64,7 +65,8 @@ async function Form() {
   const session = await getSession(await headers());
   return (
     <SubmitForm
-      siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || null}
+      // Read at request time (not NEXT_PUBLIC_*, which Next bakes in at build time).
+      siteKey={env().TURNSTILE_SITE_KEY ?? null}
       signedInAs={session?.user.name ?? null}
     />
   );

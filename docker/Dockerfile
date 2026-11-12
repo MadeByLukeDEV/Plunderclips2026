@@ -20,13 +20,18 @@ RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store pnpm install
 
 FROM deps AS build
 COPY . .
-ENV NEXT_TELEMETRY_DISABLED=1
+# Public site URL, needed at build time for absolute metadata URLs (Open Graph, canonical).
+# Nothing secret goes into the image: runtime config comes from the environment.
+ARG SITE_URL=http://localhost:3000
+ENV NEXT_TELEMETRY_DISABLED=1 SITE_URL=${SITE_URL}
 RUN pnpm --filter @plunderclips/web build
 
-# One-shot migration runner (compose service `migrate`).
+# One-shot migration runner (compose service `migrate`). Exits 0 when the schema is up to date.
 FROM deps AS migrate
 COPY packages packages
-CMD ["pnpm", "--filter", "@plunderclips/db", "migrate"]
+ENV NODE_ENV=production
+WORKDIR /repo/packages/db
+CMD ["node", "migrate.mjs"]
 
 FROM node:${NODE_VERSION} AS runner
 WORKDIR /app

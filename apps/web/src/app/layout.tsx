@@ -24,7 +24,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.BETTER_AUTH_URL ?? "http://localhost:3000"),
+  // Evaluated at build time: the Docker build gets SITE_URL as a build arg (see docker/Dockerfile).
+  metadataBase: new URL(
+    process.env.SITE_URL ?? process.env.BETTER_AUTH_URL ?? "http://localhost:3000",
+  ),
   title: {
     default: "Plunderclips: Sea of Thieves clips from streamers",
     template: "%s · Plunderclips",
