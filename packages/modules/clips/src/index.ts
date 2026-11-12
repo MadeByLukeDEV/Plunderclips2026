@@ -39,6 +39,7 @@ export {
 } from "./submit";
 export {
   listClips,
+  listClipsByChannels,
   listSections,
   getSectionPage,
   getClip,

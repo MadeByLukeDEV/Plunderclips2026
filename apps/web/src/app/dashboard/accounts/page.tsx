@@ -13,8 +13,7 @@ export default function AccountsPage() {
     <div>
       <h1 className="text-h2">Linked accounts</h1>
       <p className="text-muted-foreground mt-3 max-w-[56ch]">
-        Sign in with any linked platform. Linked channels appear on your public profile once
-        profiles go live.
+        Sign in with any linked platform. To show your channels publicly, add them on your page.
       </p>
       <div className="mt-10">
         <Suspense fallback={<div className="bg-card h-64 animate-pulse rounded-2xl" />}>
