@@ -7,6 +7,7 @@ import { Button } from "@plunderclips/ui/components/button";
 import { cn } from "@plunderclips/ui";
 import { clipSections, mainLinks } from "./nav-data";
 import { Wordmark } from "./wordmark";
+import { AccountButton } from "./auth/account-button";
 
 const navLink =
   "inline-flex h-11 items-center gap-1.5 rounded-lg px-3 text-[15px] text-foreground/90 transition-colors hover:bg-accent hover:text-foreground";
@@ -99,9 +100,7 @@ export function SiteHeader() {
           </nav>
 
           <div className="ml-auto hidden items-center gap-2 md:flex">
-            <Button variant="ghost" asChild>
-              <Link href="/sign-in">Sign in</Link>
-            </Button>
+            <AccountButton />
             <Button asChild>
               <Link href="/submit">Submit a clip</Link>
             </Button>
@@ -159,11 +158,7 @@ export function SiteHeader() {
                 Submit a clip
               </Link>
             </Button>
-            <Button asChild size="lg" variant="secondary">
-              <Link href="/sign-in" onClick={() => setMenuOpen(false)}>
-                Sign in
-              </Link>
-            </Button>
+            <AccountButton stacked onNavigate={() => setMenuOpen(false)} />
           </div>
         </nav>
       </div>

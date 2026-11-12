@@ -3,9 +3,25 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "exports": { ".": "./src/index.ts" },
+  "exports": {
+    ".": "./src/index.ts",
+    "./client": "./src/client.ts",
+    "./proxy": "./src/proxy.ts"
+  },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "auth:schema": "auth generate --config ./auth.cli.ts --output ../../db/src/schema/identity.ts --yes",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@better-auth/infra": "0.4.29",
+    "@plunderclips/db": "workspace:*",
+    "@plunderclips/shared": "workspace:*",
+    "better-auth": "1.7.21",
+    "drizzle-orm": "0.45.4"
+  },
+  "devDependencies": {
+    "auth": "1.7.21"
   }
 }
