@@ -1,0 +1,17 @@
+{
+  "name": "@plunderclips/shared",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src"
+  },
+  "dependencies": {
+    "ioredis": "6.0.0",
+    "zod": "4.6.7"
+  }
+}

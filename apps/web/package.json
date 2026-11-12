@@ -1,0 +1,32 @@
+{
+  "name": "@plunderclips/web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "typecheck": "next typegen && tsc --noEmit"
+  },
+  "dependencies": {
+    "@plunderclips/clips": "workspace:*",
+    "@plunderclips/creators": "workspace:*",
+    "@plunderclips/db": "workspace:*",
+    "@plunderclips/identity": "workspace:*",
+    "@plunderclips/moderation": "workspace:*",
+    "@plunderclips/shared": "workspace:*",
+    "@plunderclips/ui": "workspace:*",
+    "next": "16.4.6",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/turbopack": "4.3.3",
+    "@types/node": "^24",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint-config-next": "16.4.6",
+    "tailwindcss": "4.3.3"
+  }
+}
