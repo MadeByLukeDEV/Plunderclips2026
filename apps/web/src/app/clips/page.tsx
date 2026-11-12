@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CLIP_TAGS, isClipTag } from "@plunderclips/clips";
+import { CLIP_TAGS, isClipTag, type ClipSort } from "@plunderclips/clips";
 import { Button } from "@plunderclips/ui/components/button";
 import { cn } from "@plunderclips/ui/lib/utils";
 import { ClipGrid } from "@/components/clips/clip-card";
@@ -26,7 +26,7 @@ export default function ClipsPage({ searchParams }: Props) {
           All clips
         </h1>
         <p className="text-lead text-muted-foreground mt-4 max-w-[52ch]">
-          Every clip the mods let through, newest first.
+          Every clip the mods let through. Sort by newest or by votes.
         </p>
         <Suspense fallback={<GridSkeleton withFilters />}>
           <Results searchParams={searchParams} />
@@ -41,18 +41,47 @@ async function Results({ searchParams }: Props) {
   const tagParam = one(params.tag);
   const tag = isClipTag(tagParam) ? tagParam : null;
   const cursor = one(params.after);
-  const page = await clipsPage(cursor, tag);
+  const sort: ClipSort = one(params.sort) === "top" ? "top" : "new";
+  const page = await clipsPage(cursor, tag, sort);
 
-  const href = (t: string | null) => (t ? `/clips?tag=${t}` : "/clips");
+  const href = (t: string | null, s: ClipSort = sort) => {
+    const q = new URLSearchParams({
+      ...(t ? { tag: t } : {}),
+      ...(s === "top" ? { sort: s } : {}),
+    });
+    return q.size ? `/clips?${q}` : "/clips";
+  };
   const next = page.nextCursor
-    ? `/clips?${new URLSearchParams({ ...(tag ? { tag } : {}), after: page.nextCursor })}`
+    ? `/clips?${new URLSearchParams({ ...(tag ? { tag } : {}), ...(sort === "top" ? { sort } : {}), after: page.nextCursor })}`
     : null;
 
   return (
     <>
+      <div className="mt-10 flex items-center gap-1" role="group" aria-label="Sort">
+        {(
+          [
+            ["new", "Newest"],
+            ["top", "Most votes"],
+          ] as const
+        ).map(([s, label]) => (
+          <Link
+            key={s}
+            href={href(tag, s)}
+            aria-current={s === sort ? "true" : undefined}
+            className={cn(
+              "flex min-h-11 items-center rounded-lg px-4 text-sm font-medium transition-colors",
+              s === sort
+                ? "bg-card text-foreground"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {label}
+          </Link>
+        ))}
+      </div>
       <nav
         aria-label="Filter by tag"
-        className="-mx-1 mt-10 flex [scrollbar-width:none] gap-2 overflow-x-auto px-1 py-1 sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden"
+        className="-mx-1 mt-4 flex [scrollbar-width:none] gap-2 overflow-x-auto px-1 py-1 sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden"
       >
         {[null, ...Object.keys(CLIP_TAGS)].map((t) => {
           const active = t === tag;
@@ -86,12 +115,12 @@ async function Results({ searchParams }: Props) {
         <div className="mt-14 flex gap-3">
           {cursor ? (
             <Button asChild variant="secondary" size="lg">
-              <Link href={href(tag)}>Back to newest</Link>
+              <Link href={href(tag)}>Back to the start</Link>
             </Button>
           ) : null}
           {next ? (
             <Button asChild variant="secondary" size="lg">
-              <Link href={next}>Older clips</Link>
+              <Link href={next}>{sort === "top" ? "More clips" : "Older clips"}</Link>
             </Button>
           ) : null}
         </div>

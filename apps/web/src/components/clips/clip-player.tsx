@@ -10,10 +10,19 @@ import { ClipThumb } from "./clip-thumb";
  * Facade: the thumbnail and a play button until the visitor asks for the video. Only then the
  * platform's iframe (and its trackers and megabytes of script) loads. No src: link-out instead.
  */
+/** Counts a view: fire-and-forget, survives the tab navigating away to the platform. */
+function sendView(clipId: string) {
+  const url = `/api/clips/${clipId}/view`;
+  if (!navigator.sendBeacon?.(url))
+    void fetch(url, { method: "POST", keepalive: true }).catch(() => {});
+}
+
 export function ClipPlayer({
   clip,
   src,
+  clipId,
 }: {
+  clipId: string;
   clip: Pick<ClipView, "title" | "thumbnailUrl" | "platform" | "canonicalUrl" | "kind">;
   src: string | null;
 }) {
@@ -43,6 +52,7 @@ export function ClipPlayer({
         href={clip.canonicalUrl}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={() => sendView(clipId)}
         className={`${frame} group zoom-frame relative block overflow-hidden rounded-2xl`}
       >
         <ClipThumb clip={clip} eager className="absolute inset-0 aspect-auto size-full" />
@@ -58,7 +68,10 @@ export function ClipPlayer({
   return (
     <button
       type="button"
-      onClick={() => setPlaying(true)}
+      onClick={() => {
+        setPlaying(true);
+        sendView(clipId);
+      }}
       className={`${frame} group zoom-frame focus-visible:ring-ring/50 relative block overflow-hidden rounded-2xl focus-visible:ring-[3px] focus-visible:outline-none`}
       aria-label={`Play "${clip.title}" (loads the ${label} player)`}
     >

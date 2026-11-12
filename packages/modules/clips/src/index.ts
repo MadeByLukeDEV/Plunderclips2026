@@ -42,6 +42,7 @@ export {
   listSections,
   getSectionPage,
   getClip,
+  getClipCounts,
   relatedClips,
   sectionsOf,
   addToSection,
@@ -53,6 +54,10 @@ export {
   type ClipPage,
   type SectionView,
   type SectionPage,
+  type ClipSort,
+  type Cursor,
 } from "./queries";
 export { CLIP_TAGS, isClipTag, type ClipTag } from "./tags";
 export { isoWeek, weekStart, previousWeek } from "./week";
+export { setVote, hasVoted, voterKey, VOTE_LIMIT, type Voter, type VoteResult } from "./votes";
+export { recordView, flushViews, pendingViews, VIEW_LIMIT, type ViewResult } from "./views";

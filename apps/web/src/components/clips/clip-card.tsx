@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Anchor } from "lucide-react";
 import { PlatformIcon } from "@plunderclips/ui/components/platform-icon";
 import type { ClipView } from "@plunderclips/clips";
 import { formatDuration, platformMeta } from "./clip-meta";
@@ -28,6 +29,15 @@ export function ClipCard({ clip, eager = false }: { clip: ClipView; eager?: bool
       <p className="text-muted-foreground mt-1 flex items-center gap-2 text-sm">
         {meta.icon ? <PlatformIcon platform={meta.icon} className="size-4" /> : null}
         <span className="truncate">{clip.authorName ?? meta.label}</span>
+        {clip.voteCount > 0 ? (
+          <span
+            className="ml-auto flex shrink-0 items-center gap-1 font-mono text-xs tabular-nums"
+            aria-label={`${clip.voteCount} votes`}
+          >
+            <Anchor className="size-3.5" aria-hidden />
+            {clip.voteCount}
+          </span>
+        ) : null}
       </p>
     </article>
   );

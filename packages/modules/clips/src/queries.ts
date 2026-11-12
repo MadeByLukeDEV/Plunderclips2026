@@ -23,6 +23,9 @@ export type ClipView = {
   durationSeconds: number | null;
   tags: ClipTag[];
   approvedAt: Date | null;
+  voteCount: number;
+  /** Flushed views only; the clip page adds pendingViews() for a live figure. */
+  viewCount: number;
 };
 
 export type SectionView = {
@@ -48,6 +51,8 @@ const columns = {
   durationSeconds: clip.durationSeconds,
   tags: clip.tags,
   approvedAt: clip.approvedAt,
+  voteCount: clip.voteCount,
+  viewCount: clip.viewCount,
 };
 
 const toView = (r: { tags: string[] } & Omit<ClipView, "tags">): ClipView => ({
@@ -57,22 +62,37 @@ const toView = (r: { tags: string[] } & Omit<ClipView, "tags">): ClipView => ({
 
 const approved = eq(clip.status, "approved");
 const newest = [desc(clip.approvedAt), desc(clip.id)] as const;
+const top = [desc(clip.voteCount), desc(clip.id)] as const;
+
+export type ClipSort = "new" | "top";
 
 export const PAGE_SIZE = 24;
 
-// --- Cursor: "<approvedAt ISO>|<id>", base64url -----------------------------
+// --- Cursor: base64url of "n|<approvedAt ISO>|<id>" (newest) or "t|<votes>|<id>" (top) ---------
 
-export function encodeCursor(c: Pick<ClipView, "approvedAt" | "id">): string | null {
+export function encodeCursor(
+  c: Pick<ClipView, "approvedAt" | "id" | "voteCount">,
+  sort: ClipSort = "new",
+): string | null {
+  if (sort === "top") return Buffer.from(`t|${c.voteCount}|${c.id}`).toString("base64url");
   if (!c.approvedAt) return null;
-  return Buffer.from(`${c.approvedAt.toISOString()}|${c.id}`).toString("base64url");
+  return Buffer.from(`n|${c.approvedAt.toISOString()}|${c.id}`).toString("base64url");
 }
 
-export function decodeCursor(v: string | null | undefined): { at: Date; id: string } | null {
+export type Cursor =
+  { sort: "new"; at: Date; id: string } | { sort: "top"; votes: number; id: string };
+
+export function decodeCursor(v: string | null | undefined): Cursor | null {
   if (!v || v.length > 200) return null;
-  const [iso, id] = Buffer.from(v, "base64url").toString("utf8").split("|");
-  const at = iso ? new Date(iso) : null;
-  if (!at || Number.isNaN(at.getTime()) || !id || !UUID.test(id)) return null;
-  return { at, id };
+  const [kind, value, id] = Buffer.from(v, "base64url").toString("utf8").split("|");
+  if (!id || !UUID.test(id)) return null;
+  if (kind === "n") {
+    const at = value ? new Date(value) : null;
+    return at && !Number.isNaN(at.getTime()) ? { sort: "new", at, id } : null;
+  }
+  if (kind === "t" && value && /^\d{1,9}$/.test(value))
+    return { sort: "top", votes: Number(value), id };
+  return null;
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -81,29 +101,38 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export type ClipPage = { clips: ClipView[]; nextCursor: string | null };
 
-/** Approved clips, newest first, keyset-paginated. Optional tag or channel filter. */
+/** Approved clips, keyset-paginated: newest first, or most votes first. Optional tag filter. */
 export async function listClips(
-  opts: { cursor?: string | null; tag?: string | null; limit?: number } = {},
+  opts: { cursor?: string | null; tag?: string | null; sort?: ClipSort; limit?: number } = {},
 ): Promise<ClipPage> {
+  const sort: ClipSort = opts.sort === "top" ? "top" : "new";
   const limit = Math.min(Math.max(opts.limit ?? PAGE_SIZE, 1), 60);
   const cursor = decodeCursor(opts.cursor);
   const where = [approved];
   if (opts.tag && isClipTag(opts.tag)) where.push(arrayOverlaps(clip.tags, [opts.tag]));
-  if (cursor)
+  // A cursor from the other sort order is ignored (first page).
+  if (cursor?.sort === "new" && sort === "new")
     where.push(
       or(
         lt(clip.approvedAt, cursor.at),
         and(eq(clip.approvedAt, cursor.at), lt(clip.id, cursor.id)),
       )!,
     );
+  if (cursor?.sort === "top" && sort === "top")
+    where.push(
+      or(
+        lt(clip.voteCount, cursor.votes),
+        and(eq(clip.voteCount, cursor.votes), lt(clip.id, cursor.id)),
+      )!,
+    );
   const rows = await db()
     .select(columns)
     .from(clip)
     .where(and(...where))
-    .orderBy(...newest)
+    .orderBy(...(sort === "top" ? top : newest))
     .limit(limit + 1);
   const clips = rows.slice(0, limit).map(toView);
-  return { clips, nextCursor: rows.length > limit ? encodeCursor(clips.at(-1)!) : null };
+  return { clips, nextCursor: rows.length > limit ? encodeCursor(clips.at(-1)!, sort) : null };
 }
 
 export async function listSections(): Promise<SectionView[]> {
@@ -118,13 +147,13 @@ export type SectionPage = {
   clips: ClipView[];
   /** ISO week of the picks shown (weekly sections only). */
   period: string | null;
-  /** No picks yet: the newest approved clips of the last 7 days stand in. */
+  /** No picks yet: the most-voted clips approved in the last 7 days stand in. */
   fallback: boolean;
 };
 
 /**
  * A section with its clips. Weekly sections show this week's picks, else last week's,
- * else the newest approved clips of the last seven days so the page is never empty.
+ * else the most-voted clips approved in the last seven days, so the page is never empty.
  */
 export async function getSectionPage(slug: string, now = new Date()): Promise<SectionPage | null> {
   const [s] = await db()
@@ -148,7 +177,7 @@ export async function getSectionPage(slug: string, now = new Date()): Promise<Se
     .select(columns)
     .from(clip)
     .where(and(approved, gte(clip.approvedAt, since)))
-    .orderBy(...newest)
+    .orderBy(desc(clip.voteCount), desc(clip.viewCount), ...newest)
     .limit(PAGE_SIZE);
   return { section: s, clips: rows.map(toView), period: thisWeek, fallback: true };
 }
@@ -175,6 +204,19 @@ export async function getClip(id: string): Promise<ClipView | null> {
     .where(and(eq(clip.id, id), approved))
     .limit(1);
   return row ? toView(row) : null;
+}
+
+/** Live counters for one published clip (the cached clip page shows them from here). */
+export async function getClipCounts(
+  id: string,
+): Promise<{ voteCount: number; viewCount: number } | null> {
+  if (!UUID.test(id)) return null;
+  const [row] = await db()
+    .select({ voteCount: clip.voteCount, viewCount: clip.viewCount })
+    .from(clip)
+    .where(and(eq(clip.id, id), approved))
+    .limit(1);
+  return row ?? null;
 }
 
 /** Same channel or shared tags first, topped up with the newest clips. */

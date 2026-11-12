@@ -53,6 +53,11 @@ export const clip = pgTable(
       .notNull()
       .default(sql`'{}'::text[]`),
 
+    /** Denormalised from clip_vote, kept in step by the vote functions. */
+    voteCount: integer().notNull().default(0),
+    /** Flushed from Redis counters every minute or so; the live figure adds the pending delta. */
+    viewCount: integer().notNull().default(0),
+
     status: clipStatus().notNull().default("pending"),
     submittedByUserId: text().references(() => user.id, { onDelete: "set null" }),
     /** Salted hash, never the raw IP. Used for rate limits and abuse review. */
@@ -78,6 +83,31 @@ export const clip = pgTable(
       .on(t.approvedAt, t.id)
       .where(sql`${t.status} = 'approved'`),
     index("clip_tags_idx").using("gin", t.tags),
+    index("clip_top_idx")
+      .on(t.voteCount, t.id)
+      .where(sql`${t.status} = 'approved'`),
+  ],
+);
+
+/**
+ * One vote per voter per clip. voterKey is "u:<userId>" for members and "ip:<salted IP hash>"
+ * for anonymous visitors, so anonymous votes are limited per IP without storing the IP.
+ */
+export const clipVote = pgTable(
+  "clip_vote",
+  {
+    clipId: text()
+      .notNull()
+      .references(() => clip.id, { onDelete: "cascade" }),
+    voterKey: text().notNull(),
+    /** Kept when the account is deleted (set null) so vote_count stays in step with the rows. */
+    userId: text().references(() => user.id, { onDelete: "set null" }),
+    createdAt: timestamp().defaultNow().notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.clipId, t.voterKey] }),
+    index("clip_vote_created_idx").on(t.createdAt),
+    index("clip_vote_user_idx").on(t.userId),
   ],
 );
 
