@@ -1,5 +1,6 @@
 "use server";
 
+import { updateTag } from "next/cache";
 import { headers } from "next/headers";
 import { submitClip, type SubmitError, type SubmittedClip } from "@plunderclips/clips";
 import { getSession, hasPermission } from "@plunderclips/identity";
@@ -38,7 +39,11 @@ export async function submitClipAction(_prev: SubmitState, form: FormData): Prom
     },
   );
 
-  if (result.ok) return { status: "done", duplicate: result.duplicate, clip: result.clip };
+  if (result.ok) {
+    // A trusted creator's clip is live right away: drop the cached lists so it shows up.
+    if (!result.duplicate && result.clip.status === "approved") updateTag("clips");
+    return { status: "done", duplicate: result.duplicate, clip: result.clip };
+  }
   return {
     status: "error",
     error: result.error,

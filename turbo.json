@@ -1,47 +1,26 @@
 {
   "$schema": "https://turborepo.com/schema.json",
   "ui": "stream",
-  "globalEnv": [
-    "NODE_ENV"
-  ],
+  "globalEnv": ["NODE_ENV"],
   "tasks": {
     "build": {
-      "dependsOn": [
-        "^build"
-      ],
-      "outputs": [
-        ".next/**",
-        "!.next/cache/**",
-        "dist/**"
-      ],
-      "env": [
-        "DATABASE_URL",
-        "REDIS_URL",
-        "BETTER_AUTH_*",
-        "NEXT_PUBLIC_*"
-      ]
+      "dependsOn": ["^build"],
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"],
+      "env": ["DATABASE_URL", "REDIS_URL", "BETTER_AUTH_*", "NEXT_PUBLIC_*"]
     },
     "dev": {
       "cache": false,
       "persistent": true
     },
     "lint": {
-      "dependsOn": [
-        "^lint"
-      ]
+      "dependsOn": ["^lint"]
     },
     "typecheck": {
-      "dependsOn": [
-        "^typecheck"
-      ]
+      "dependsOn": ["^typecheck"]
     },
     "test": {
-      "outputs": [
-        "coverage/**"
-      ],
-      "env": [
-        "REDIS_URL"
-      ]
+      "outputs": ["coverage/**"],
+      "env": ["REDIS_URL", "DATABASE_URL"]
     }
   }
 }

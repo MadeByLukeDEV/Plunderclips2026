@@ -3,6 +3,8 @@ import type { ParsedClip } from "./parse";
 export type EmbedOptions = {
   /** Hostnames the page runs on. Twitch refuses to play without a matching parent. */
   parents: string[];
+  /** Start playing as soon as the iframe loads (after the visitor clicked play). */
+  autoplay?: boolean;
 };
 
 /**
@@ -10,13 +12,16 @@ export type EmbedOptions = {
  * Returns null where the player URL has to come from metadata (YouTube clips, Kick, Medal)
  * or where the platform has no iframe player (X): those use `metadata.embedSrc` or a link-out.
  */
-export function embedUrl(clip: ParsedClip, { parents }: EmbedOptions): string | null {
+export function embedUrl(
+  clip: Pick<ParsedClip, "platform" | "kind" | "id" | "startSeconds" | "needsResolve">,
+  { parents, autoplay = false }: EmbedOptions,
+): string | null {
   if (clip.needsResolve) return null;
   switch (clip.platform) {
     case "twitch": {
       const p = new URLSearchParams();
       for (const parent of parents) p.append("parent", parent);
-      p.set("autoplay", "false");
+      p.set("autoplay", String(autoplay));
       if (clip.kind === "clip") {
         p.set("clip", clip.id);
         return `https://clips.twitch.tv/embed?${p}`;
@@ -28,11 +33,12 @@ export function embedUrl(clip: ParsedClip, { parents }: EmbedOptions): string | 
     case "youtube": {
       if (clip.kind === "clip") return null;
       const p = new URLSearchParams({ rel: "0" });
+      if (autoplay) p.set("autoplay", "1");
       if (clip.startSeconds) p.set("start", String(clip.startSeconds));
       return `https://www.youtube-nocookie.com/embed/${clip.id}?${p}`;
     }
     case "tiktok":
-      return `https://www.tiktok.com/player/v1/${clip.id}`;
+      return `https://www.tiktok.com/player/v1/${clip.id}${autoplay ? "?autoplay=1" : ""}`;
     default:
       return null;
   }
