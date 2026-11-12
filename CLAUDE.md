@@ -18,6 +18,15 @@ Commands: `pnpm dev:services` (Postgres + Redis in Docker), `pnpm dev`, `pnpm li
 
 Versions: TypeScript stays on 6.0.x because typescript-eslint doesn't support 7 yet. ESLint stays on 9 because the eslint-config-next plugins don't support 10.
 
+## Auth (identity module)
+- Better Auth in `packages/modules/identity`: Drizzle adapter, Redis secondary storage (sessions, OAuth state, rate limits), admin plugin with roles `user | creator | mod | admin` (`src/permissions.ts`).
+- Providers turn on only when their env credentials exist (Twitch, Discord, Kick, Google→shown as YouTube). Callback: `{BETTER_AUTH_URL}/api/auth/callback/<provider>`.
+- Linking: no implicit linking on sign-in; signed-in users link more platforms from `/dashboard/accounts`.
+- Schema is generated, never hand-edited: `pnpm --filter @plunderclips/identity auth:schema`, then `pnpm db:generate` and `pnpm db:migrate`.
+- Server: `getSession(headers)` / `requireSession()` inside a Suspense boundary (cacheComponents). Client: `@plunderclips/identity/client`. Proxy (`src/proxy.ts`) is only an optimistic cookie check.
+- First admin: `UPDATE "user" SET role = 'admin' WHERE email = '...';`
+- Hosted Better Auth dashboard (`@better-auth/infra` `dash()`) runs only when `BETTER_AUTH_API_KEY` is set.
+
 ## Design system
 - Tokens: `packages/ui/src/styles/theme.css`. Palette "walnut-tan" (dealt by the taste skill): deck (dark) is the default look, `.band-parchment` / `[data-theme="light"]` is the parchment look. Use the shadcn token names (`bg-background`, `text-muted-foreground`, `bg-primary`...), never raw hex in components.
 - Type: Fraunces (display, `font-display`, h1/h2), Mona Sans (UI/body), Geist Mono (labels, numbers). Scale: `text-display`, `text-h2`, `text-h3`, `text-lead`.

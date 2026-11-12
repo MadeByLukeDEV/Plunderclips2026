@@ -15,6 +15,12 @@ const serverSchema = z.object({
   KICK_CLIENT_SECRET: z.string().optional(),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
+  // Better Auth hosted dashboard (@better-auth/infra); off unless the key is set.
+  BETTER_AUTH_API_KEY: z.string().optional(),
+  BETTER_AUTH_API_URL: z.url().optional(),
+  BETTER_AUTH_KV_URL: z.url().optional(),
+  // Local test accounts with email + password (never active in production).
+  DEV_LOGIN: z.enum(["true", "false"]).optional(),
   TURNSTILE_SECRET_KEY: z.string().optional(),
   IP_HASH_SALT: z.string().min(16).optional(),
 });

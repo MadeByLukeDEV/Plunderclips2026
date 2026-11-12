@@ -1,7 +1,10 @@
 /**
- * @plunderclips/identity — Auth (Better Auth), roles, sessions, linked platform accounts.
+ * @plunderclips/identity — auth (Better Auth), roles, sessions, linked platform accounts.
  *
- * Public API of this module. Other modules and the web app may import ONLY
- * from "@plunderclips/identity"; deep imports into src/ are blocked by ESLint.
+ * Public API of this module. Server code only; the browser client is "@plunderclips/identity/client".
  */
-export const MODULE_NAME = "identity" as const;
+export { getAuth, enabledProviders, SUPPORTED_PROVIDERS, type Auth, type ProviderId } from "./auth";
+export { getSession, rolesOf, hasRole, type Session } from "./session";
+export { roles, ROLES, statement, type Role } from "./permissions";
+export { authRouteHandlers } from "./next-handler";
+export { devLoginEnabled, isDevRole, signInAsDevUser, DEV_USERS } from "./dev-login";
