@@ -43,7 +43,13 @@ export function SiteHeader() {
 
   return (
     <>
-      <header className="border-border/60 bg-background/90 sticky top-0 z-50 border-b backdrop-blur-md">
+      <header className="nav border-border/60 bg-background/90 fixed inset-x-0 top-0 z-50 border-b backdrop-blur-md">
+        <a
+          href="#main"
+          className="bg-primary text-primary-foreground fixed top-3 left-3 z-[100] -translate-y-24 rounded-lg px-4 py-3 font-medium focus-visible:translate-y-0"
+        >
+          Skip to content
+        </a>
         <div className="wrap flex h-[var(--header-h)] items-center gap-8">
           <Wordmark />
 

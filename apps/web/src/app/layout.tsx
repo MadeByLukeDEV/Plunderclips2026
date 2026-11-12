@@ -51,12 +51,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         />
       </head>
       <body className="min-h-dvh antialiased">
-        <a
-          href="#main"
-          className="bg-primary text-primary-foreground fixed top-3 left-3 z-[100] -translate-y-24 rounded-lg px-4 py-3 font-medium focus-visible:translate-y-0"
-        >
-          Skip to content
-        </a>
         <MotionProvider>
           <SiteHeader />
           <main id="main" tabIndex={-1} className="outline-none">
