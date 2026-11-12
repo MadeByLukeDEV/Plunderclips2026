@@ -239,6 +239,19 @@ export async function isFollowing(followerId: string | null, creatorId: string):
   return !!row;
 }
 
+/** Creators the member follows, most recently followed first. */
+export async function listFollowing(followerId: string, limit = 24): Promise<Profile[]> {
+  const rows = await db()
+    .select(profileColumns)
+    .from(creatorFollow)
+    .innerJoin(creatorProfile, eq(creatorProfile.userId, creatorFollow.creatorId))
+    .innerJoin(user, eq(user.id, creatorProfile.userId))
+    .where(and(eq(creatorFollow.followerId, followerId), visible))
+    .orderBy(desc(creatorFollow.createdAt))
+    .limit(Math.min(Math.max(limit, 1), 100));
+  return withChannels(rows);
+}
+
 export async function followerCount(creatorId: string): Promise<number> {
   const [row] = await db()
     .select({ n: creatorProfile.followerCount })

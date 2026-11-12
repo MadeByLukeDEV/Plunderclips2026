@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   boolean,
+  check,
   index,
   integer,
   pgEnum,
@@ -86,6 +87,8 @@ export const clip = pgTable(
     index("clip_top_idx")
       .on(t.voteCount, t.id)
       .where(sql`${t.status} = 'approved'`),
+    // Lists sort and page by approved_at, so a published clip must have one.
+    check("clip_approved_has_date", sql`${t.status} <> 'approved' or ${t.approvedAt} is not null`),
   ],
 );
 
