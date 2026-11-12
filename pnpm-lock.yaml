@@ -261,7 +261,23 @@ importers:
         specifier: 4.23.15
         version: 4.23.15
 
-  packages/modules/moderation: {}
+  packages/modules/moderation:
+    dependencies:
+      '@plunderclips/clips':
+        specifier: workspace:*
+        version: link:../clips
+      '@plunderclips/db':
+        specifier: workspace:*
+        version: link:../../db
+      '@plunderclips/identity':
+        specifier: workspace:*
+        version: link:../identity
+      '@plunderclips/shared':
+        specifier: workspace:*
+        version: link:../../shared
+      drizzle-orm:
+        specifier: 0.45.4
+        version: 0.45.4(kysely@0.29.8)(postgres@4.1.1)
 
   packages/modules/social: {}
 

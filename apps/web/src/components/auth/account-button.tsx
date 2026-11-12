@@ -28,6 +28,8 @@ export function AccountButton({
 
   const { user } = data;
   const initial = (user.name || user.email).trim().charAt(0).toUpperCase();
+  // Only a hint for showing the link; /admin checks the role on the server.
+  const staff = /(^|,)\s*(mod|admin)\s*(,|$)/.test((user as { role?: string | null }).role ?? "");
 
   async function signOut() {
     await authClient.signOut();
@@ -53,6 +55,13 @@ export function AccountButton({
           Dashboard
         </Link>
       </Button>
+      {staff ? (
+        <Button variant="ghost" size={stacked ? "lg" : "default"} asChild>
+          <Link href="/admin" onClick={onNavigate}>
+            Admin
+          </Link>
+        </Button>
+      ) : null}
       <Button variant="ghost" size={stacked ? "lg" : "default"} onClick={signOut}>
         Sign out
       </Button>

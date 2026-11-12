@@ -7,6 +7,8 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { channelUrl, followerCount, isFollowing, type Profile } from "@plunderclips/creators";
 import { getSession } from "@plunderclips/identity";
+import { REPORT_REASONS } from "@plunderclips/moderation";
+import { ReportButton } from "@/components/report-button";
 import { Button } from "@plunderclips/ui/components/button";
 import { PlatformIcon } from "@plunderclips/ui/components/platform-icon";
 import { ClipGrid } from "@/components/clips/clip-card";
@@ -181,12 +183,15 @@ async function Follow({ profile }: { profile: Profile }) {
     followerCount(profile.userId),
   ]);
   return (
-    <FollowButton
-      creatorId={profile.userId}
-      handle={profile.handle}
-      initial={{ following, followers }}
-      signedIn={!!me}
-    />
+    <div className="grid gap-3 md:justify-items-end">
+      <FollowButton
+        creatorId={profile.userId}
+        handle={profile.handle}
+        initial={{ following, followers }}
+        signedIn={!!me}
+      />
+      <ReportButton targetType="creator" targetId={profile.userId} reasons={REPORT_REASONS} />
+    </div>
   );
 }
 

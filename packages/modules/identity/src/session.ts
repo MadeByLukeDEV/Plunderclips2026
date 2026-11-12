@@ -1,5 +1,5 @@
 import { getAuth } from "./auth";
-import { roles, type Role, type statement } from "./permissions";
+import { can, type Permissions, type Role } from "./permissions";
 
 export async function getSession(headers: Headers) {
   return getAuth().api.getSession({ headers });
@@ -21,13 +21,8 @@ export function hasRole(session: Session | null, ...wanted: Role[]) {
   return wanted.some((r) => mine.includes(r));
 }
 
-type Permissions = { [K in keyof typeof statement]?: (typeof statement)[K][number][] };
-
 /** True when any of the user's roles grants every listed permission. Banned users get nothing. */
 export function hasPermission(session: Session | null, permissions: Permissions): boolean {
   if (!session || (session.user as { banned?: boolean | null }).banned) return false;
-  return rolesOf(session).some(
-    (r) =>
-      roles[r]?.authorize(permissions as Parameters<(typeof roles)[Role]["authorize"]>[0]).success,
-  );
+  return can(rolesOf(session), permissions);
 }

@@ -49,7 +49,9 @@ function parents(): string[] {
 }
 
 /** iframe src to load after the visitor presses play, or null for a link-out (X, missing player). */
-export function playerSrc(c: ClipView): string | null {
+export function playerSrc(
+  c: Pick<ClipView, "embedSrc" | "platform" | "kind" | "platformId" | "startSeconds">,
+): string | null {
   if (c.embedSrc) return c.embedSrc;
   return embedUrl(
     {

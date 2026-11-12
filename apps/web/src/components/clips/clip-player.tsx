@@ -22,7 +22,8 @@ export function ClipPlayer({
   src,
   clipId,
 }: {
-  clipId: string;
+  /** Counts a view on play. Leave out where plays aren't real views (admin previews). */
+  clipId?: string;
   clip: Pick<ClipView, "title" | "thumbnailUrl" | "platform" | "canonicalUrl" | "kind">;
   src: string | null;
 }) {
@@ -52,7 +53,7 @@ export function ClipPlayer({
         href={clip.canonicalUrl}
         target="_blank"
         rel="noopener noreferrer"
-        onClick={() => sendView(clipId)}
+        onClick={() => clipId && sendView(clipId)}
         className={`${frame} group zoom-frame relative block overflow-hidden rounded-2xl`}
       >
         <ClipThumb clip={clip} eager className="absolute inset-0 aspect-auto size-full" />
@@ -70,7 +71,7 @@ export function ClipPlayer({
       type="button"
       onClick={() => {
         setPlaying(true);
-        sendView(clipId);
+        if (clipId) sendView(clipId);
       }}
       className={`${frame} group zoom-frame focus-visible:ring-ring/50 relative block overflow-hidden rounded-2xl focus-visible:ring-[3px] focus-visible:outline-none`}
       aria-label={`Play "${clip.title}" (loads the ${label} player)`}

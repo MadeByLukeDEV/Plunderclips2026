@@ -5,6 +5,6 @@
  */
 export { getAuth, enabledProviders, SUPPORTED_PROVIDERS, type Auth, type ProviderId } from "./auth";
 export { getSession, rolesOf, hasRole, hasPermission, type Session } from "./session";
-export { roles, ROLES, statement, type Role } from "./permissions";
+export { roles, ROLES, statement, can, type Role, type Permissions } from "./permissions";
 export { authRouteHandlers } from "./next-handler";
 export { devLoginEnabled, isDevRole, signInAsDevUser, DEV_USERS } from "./dev-login";
