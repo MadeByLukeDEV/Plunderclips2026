@@ -1,0 +1,38 @@
+# Plunderclips: agent guide
+
+A Sea of Thieves clip community where streamers promote their content and connect with each other. Unofficial fan project. The visual direction takes cues from seaofthieves.com (dark sea, parchment, brass, painterly, cinematic), but **all art, logos and fonts are original**. Never copy SoT trademarks or assets.
+
+## Workflow
+- Never commit to `main`. Branch per topic: `feature/`, `fix/`, `chore/`, `refactor/`, `docs/`, `design/`. Land work via PR and link the roadmap issue (`Closes #N`). See CONTRIBUTING.md.
+- Conventional Commits.
+- Next.js 16.4 has breaking changes. Read `apps/web/node_modules/next/dist/docs/` before using an unfamiliar API (see `apps/web/AGENTS.md`).
+
+## Architecture (modular monolith)
+- `apps/web`: Next.js App Router (cacheComponents on, standalone output).
+- `packages/modules/<name>`: domain modules (`identity`, `clips`, `creators`, `moderation`, `social`). **Import only from a module's public entry** (`@plunderclips/clips`), never from `src/` internals. ESLint enforces this.
+- `packages/db`: Drizzle client + schema barrel. Each module's tables live in `src/schema/<module>.ts`.
+- `packages/shared`: lazy env validation (`env()`), Redis client, logger.
+- `packages/ui`: shadcn components, ReactBits pieces, `cn`.
+
+Commands: `pnpm dev:services` (Postgres + Redis in Docker), `pnpm dev`, `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm db:generate`, `pnpm db:migrate`.
+
+Versions: TypeScript stays on 6.0.x because typescript-eslint doesn't support 7 yet. ESLint stays on 9 because the eslint-config-next plugins don't support 10.
+
+## Skill routing (avoid overlap)
+| Need | Use | Don't |
+|---|---|---|
+| Art direction, new public pages | `design-taste-frontend` | stacking several design skills on one task |
+| Polish / critique / audit passes | `impeccable` | |
+| Palettes, font pairing, GSAP presets | `ui-ux-pro-max` | |
+| Second-opinion review only | `frontend-design`, `apple-design` (a11y/HIG) | using them to generate |
+| Reference design systems | `docs/design-refs/*.md` (awesome-design-md) | copying any one wholesale |
+| A11y/UX compliance check | `web-design-guidelines` | |
+| Security review before deploy | `security-audit` | `agent-skills:security-and-hardening` for audits (fine for build-time hardening) |
+| SEO/GEO/AEO | `seo-geo-aeo` (phase 3) | |
+| UI copy | `stop-slop` | `humanizer` (long-form only) |
+| E2E flows | `playwright` MCP | |
+| Perf, Lighthouse, network | `chrome-devtools` MCP | |
+| Quick visual check | built-in browser pane | |
+| Spec → plan → build discipline | `agent-skills` (addyosmani) | |
+| Codebase map | `graphify` | |
+| Session memory | `claude-mem` | |

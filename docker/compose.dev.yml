@@ -1,0 +1,23 @@
+# Local services only. The Next app runs on the host with `pnpm dev`.
+name: plunderclips-dev
+services:
+  postgres:
+    image: postgres:18-alpine
+    environment:
+      POSTGRES_USER: plunder
+      POSTGRES_PASSWORD: plunder
+      POSTGRES_DB: plunderclips
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U plunder -d plunderclips"]
+      interval: 5s
+      retries: 10
+  redis:
+    image: redis:8-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports: ["6379:6379"]
+    volumes: [redisdata:/data]
+volumes:
+  pgdata:
+  redisdata:
