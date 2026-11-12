@@ -7,6 +7,7 @@ import {
   listClips,
   relatedClips,
   sectionsOf,
+  type ClipSort,
   type ClipView,
 } from "@plunderclips/clips";
 
@@ -14,11 +15,11 @@ import {
  * Cached reads for the public clip pages. Everything carries the "clips" tag, which the submit
  * action (and later the review queue) expires with updateTag("clips") when a clip is published.
  */
-export async function clipsPage(cursor: string | null, tag: string | null) {
+export async function clipsPage(cursor: string | null, tag: string | null, sort: ClipSort) {
   "use cache";
   cacheTag("clips");
   cacheLife("minutes");
-  return listClips({ cursor, tag });
+  return listClips({ cursor, tag, sort });
 }
 
 export async function sectionPage(slug: string) {

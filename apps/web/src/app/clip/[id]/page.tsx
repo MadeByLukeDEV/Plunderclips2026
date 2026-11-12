@@ -9,6 +9,7 @@ import { PlatformIcon } from "@plunderclips/ui/components/platform-icon";
 import { ClipGrid } from "@/components/clips/clip-card";
 import { formatDate, formatDuration, platformMeta } from "@/components/clips/clip-meta";
 import { ClipPlayer } from "@/components/clips/clip-player";
+import { ClipStats, ClipStatsSkeleton } from "@/components/clips/clip-stats";
 import { clipPage, playerSrc } from "@/lib/clips-data";
 
 type Props = { params: Promise<{ id: string }> };
@@ -58,7 +59,7 @@ async function Content({ params }: Props) {
       >
         <div className="wrap grid-12 content-start">
           <div className="col-span-12 min-w-0 lg:col-span-8">
-            <ClipPlayer clip={clip} src={playerSrc(clip)} />
+            <ClipPlayer clip={clip} src={playerSrc(clip)} clipId={clip.id} />
           </div>
           <div className="col-span-12 min-w-0 lg:col-span-4">
             {sections.length ? (
@@ -78,6 +79,11 @@ async function Content({ params }: Props) {
             <h1 id="clip-title" className="text-h3 mt-4 font-medium text-balance">
               {clip.title}
             </h1>
+            <div className="mt-6">
+              <Suspense fallback={<ClipStatsSkeleton />}>
+                <ClipStats clipId={clip.id} />
+              </Suspense>
+            </div>
             <dl className="text-muted-foreground mt-6 grid gap-3 text-sm">
               <div className="flex items-center gap-2">
                 <dt className="sr-only">Streamer</dt>
