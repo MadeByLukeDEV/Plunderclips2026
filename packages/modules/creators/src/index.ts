@@ -23,6 +23,7 @@ export {
   saveProfile,
   setFollow,
   isFollowing,
+  listFollowing,
   followerCount,
   DISPLAY_NAME_MAX,
   BIO_MAX,

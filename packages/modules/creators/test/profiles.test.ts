@@ -165,6 +165,17 @@ describe.skipIf(!url)("creator profiles (Postgres)", async () => {
       expect(await p.followerCount(uid("alice"))).toBe(1);
     });
 
+    it("lists who a member follows, newest follow first", async () => {
+      await p.saveProfile(uid("carol"), { handle: h("carol"), displayName: "Carol" });
+      await p.setFollow(uid("bob"), uid("alice"), true);
+      await p.setFollow(uid("bob"), uid("carol"), true);
+      const following = await p.listFollowing(uid("bob"));
+      expect(following.map((x) => x.userId)).toEqual([uid("carol"), uid("alice")]);
+      expect(await p.listFollowing(uid("alice"))).toEqual([]);
+      await p.setFollow(uid("bob"), uid("alice"), false);
+      await p.setFollow(uid("bob"), uid("carol"), false);
+    });
+
     it("sorts the list by followers", async () => {
       const top = await p.listProfiles({ sort: "followers", limit: 100 });
       const mine = top.filter((x) => x.userId.startsWith(`test-${run}-`)).map((x) => x.userId);
