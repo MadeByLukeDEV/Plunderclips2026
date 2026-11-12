@@ -15,6 +15,13 @@
       "when": 1794506371045,
       "tag": "0001_clips",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794507095139,
+      "tag": "0002_sections",
+      "breakpoints": true
     }
   ]
 }
