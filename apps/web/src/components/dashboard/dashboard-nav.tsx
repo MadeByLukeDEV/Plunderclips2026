@@ -6,6 +6,7 @@ import { cn } from "@plunderclips/ui";
 
 const items = [
   { href: "/dashboard", label: "Overview" },
+  { href: "/dashboard/profile", label: "Your page" },
   { href: "/dashboard/accounts", label: "Linked accounts" },
 ];
 

@@ -18,7 +18,8 @@ describe.skipIf(!ready)("votes and views (Postgres + Redis)", async () => {
   const { recordView, flushViews, pendingViews } = await import("../src/views");
   const { listClips, decodeCursor } = await import("../src/queries");
 
-  const run = `test:${Date.now()}:`;
+  // Random suffix: test files run in parallel and must never share a key prefix.
+  const run = `test:${Date.now()}${Math.random().toString(36).slice(2, 8)}:`;
   const tag = `t${Date.now().toString(36)}`;
   const ids: Record<string, string> = {};
   const voters = Array.from({ length: 5 }, (_, i) => ({ ipHash: `${run}voter${i}` }));

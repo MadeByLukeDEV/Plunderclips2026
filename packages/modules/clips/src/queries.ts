@@ -1,4 +1,17 @@
-import { and, arrayOverlaps, asc, desc, eq, gte, lt, ne, notInArray, or } from "drizzle-orm";
+import {
+  and,
+  arrayOverlaps,
+  asc,
+  desc,
+  eq,
+  gte,
+  inArray,
+  lt,
+  ne,
+  notInArray,
+  or,
+  sql,
+} from "drizzle-orm";
 import { db, schema } from "@plunderclips/db";
 import type { Platform } from "./parse";
 import { isClipTag, type ClipTag } from "./tags";
@@ -133,6 +146,49 @@ export async function listClips(
     .limit(limit + 1);
   const clips = rows.slice(0, limit).map(toView);
   return { clips, nextCursor: rows.length > limit ? encodeCursor(clips.at(-1)!, sort) : null };
+}
+
+/**
+ * Approved clips from a creator's channels, newest first: matched on the channel in the clip URL
+ * or on the author URL the platform reported (Twitch clips and YouTube videos carry no channel).
+ */
+export async function listClipsByChannels(
+  channels: { platform: Platform; handle: string; authorUrls: string[] }[],
+  opts: { cursor?: string | null; limit?: number } = {},
+): Promise<ClipPage> {
+  if (!channels.length) return { clips: [], nextCursor: null };
+  const limit = Math.min(Math.max(opts.limit ?? PAGE_SIZE, 1), 60);
+  const match = channels.map((c) =>
+    and(
+      eq(clip.platform, c.platform),
+      or(
+        sql`lower(${clip.channel}) = ${c.handle.toLowerCase()}`,
+        c.authorUrls.length
+          ? inArray(
+              sql`lower(rtrim(${clip.authorUrl}, '/'))`,
+              c.authorUrls.map((u) => u.toLowerCase()),
+            )
+          : undefined,
+      ),
+    ),
+  );
+  const where = [approved, or(...match)!];
+  const cursor = decodeCursor(opts.cursor);
+  if (cursor?.sort === "new")
+    where.push(
+      or(
+        lt(clip.approvedAt, cursor.at),
+        and(eq(clip.approvedAt, cursor.at), lt(clip.id, cursor.id)),
+      )!,
+    );
+  const rows = await db()
+    .select(columns)
+    .from(clip)
+    .where(and(...where))
+    .orderBy(...newest)
+    .limit(limit + 1);
+  const clips = rows.slice(0, limit).map(toView);
+  return { clips, nextCursor: rows.length > limit ? encodeCursor(clips.at(-1)!) : null };
 }
 
 export async function listSections(): Promise<SectionView[]> {

@@ -17,7 +17,8 @@ describe.skipIf(!url)("clip queries (Postgres)", async () => {
   const q = await import("../src/queries");
   const { isoWeek, previousWeek } = await import("../src/week");
 
-  const run = `test:${Date.now()}:`;
+  // Random suffix: test files run in parallel and must never share a key prefix.
+  const run = `test:${Date.now()}${Math.random().toString(36).slice(2, 8)}:`;
   const now = new Date("2026-11-12T12:00:00Z");
   const ids: Record<string, string> = {};
 
