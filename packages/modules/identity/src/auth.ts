@@ -43,7 +43,11 @@ function createAuth() {
     database: drizzleAdapter(db(), { provider: "pg", schema }),
     secondaryStorage: redisStorage(),
     socialProviders: socialProviders(),
-    emailAndPassword: { enabled: false },
+    // Email + password only for local dev test users (see dev-login.ts). Nobody can sign up with it.
+    emailAndPassword: {
+      enabled: e.NODE_ENV !== "production" && e.DEV_LOGIN === "true",
+      disableSignUp: true,
+    },
     session: {
       // Sessions live in Redis (fast lookups) and in Postgres (so admins can list and revoke them).
       storeSessionInDatabase: true,

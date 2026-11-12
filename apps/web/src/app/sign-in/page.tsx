@@ -4,7 +4,8 @@ import Image from "next/image";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
-import { enabledProviders, getSession } from "@plunderclips/identity";
+import { devLoginEnabled, enabledProviders, getSession } from "@plunderclips/identity";
+import { DevLogin } from "@/components/auth/dev-login";
 import { SignInButtons } from "@/components/auth/sign-in-buttons";
 import { isProviderKey } from "@/components/auth/providers";
 import { safeNext } from "@/lib/safe-next";
@@ -63,7 +64,9 @@ async function Providers({ searchParams }: Props) {
   if (session) redirect(next);
 
   const providers = enabledProviders().filter(isProviderKey);
+  const dev = devLoginEnabled() ? <DevLogin next={next} /> : null;
   if (providers.length === 0) {
+    if (dev) return dev;
     return (
       <p
         role="status"
@@ -74,7 +77,12 @@ async function Providers({ searchParams }: Props) {
       </p>
     );
   }
-  return <SignInButtons providers={providers} next={next} />;
+  return (
+    <>
+      <SignInButtons providers={providers} next={next} />
+      {dev}
+    </>
+  );
 }
 
 function ButtonsSkeleton() {

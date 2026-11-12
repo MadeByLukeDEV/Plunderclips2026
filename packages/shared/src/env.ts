@@ -19,6 +19,8 @@ const serverSchema = z.object({
   BETTER_AUTH_API_KEY: z.string().optional(),
   BETTER_AUTH_API_URL: z.url().optional(),
   BETTER_AUTH_KV_URL: z.url().optional(),
+  // Local test accounts with email + password (never active in production).
+  DEV_LOGIN: z.enum(["true", "false"]).optional(),
   TURNSTILE_SECRET_KEY: z.string().optional(),
   IP_HASH_SALT: z.string().min(16).optional(),
 });
