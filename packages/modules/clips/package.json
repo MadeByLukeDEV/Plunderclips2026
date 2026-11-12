@@ -12,6 +12,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@plunderclips/shared": "workspace:*"
+    "@plunderclips/db": "workspace:*",
+    "@plunderclips/shared": "workspace:*",
+    "drizzle-orm": "0.45.4"
   }
 }
