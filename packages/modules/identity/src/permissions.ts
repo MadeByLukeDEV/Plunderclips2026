@@ -34,3 +34,15 @@ export const roles = {
 
 export type Role = keyof typeof roles;
 export const ROLES = Object.keys(roles) as Role[];
+
+export type Permissions = { [K in keyof typeof statement]?: (typeof statement)[K][number][] };
+
+/** True when any of these roles grants every listed permission. */
+export function can(userRoles: readonly string[], permissions: Permissions): boolean {
+  return userRoles.some((r) => {
+    const role = roles[r as Role];
+    return role
+      ? role.authorize(permissions as Parameters<typeof role.authorize>[0]).success
+      : false;
+  });
+}

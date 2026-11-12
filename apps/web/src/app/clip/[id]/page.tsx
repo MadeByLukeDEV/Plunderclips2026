@@ -4,6 +4,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ExternalLink } from "lucide-react";
 import { CLIP_TAGS } from "@plunderclips/clips";
+import { REPORT_REASONS } from "@plunderclips/moderation";
+import { ReportButton } from "@/components/report-button";
 import { Button } from "@plunderclips/ui/components/button";
 import { PlatformIcon } from "@plunderclips/ui/components/platform-icon";
 import { ClipGrid } from "@/components/clips/clip-card";
@@ -137,6 +139,9 @@ async function Content({ params }: Props) {
                 Open on {meta.label} <ExternalLink className="size-4" aria-hidden />
               </a>
             </Button>
+            <div className="mt-6">
+              <ReportButton targetType="clip" targetId={clip.id} reasons={REPORT_REASONS} />
+            </div>
           </div>
         </div>
       </section>
