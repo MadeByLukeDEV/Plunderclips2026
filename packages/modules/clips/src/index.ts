@@ -25,3 +25,15 @@ export {
   type MetadataOptions,
 } from "./metadata";
 export { twitchAppAuth, type TwitchAuth } from "./twitch-token";
+export {
+  submitClip,
+  LIMITS,
+  TITLE_MAX,
+  NOTE_MAX,
+  type Submitter,
+  type SubmitInput,
+  type SubmitResult,
+  type SubmitError,
+  type SubmittedClip,
+  type ClipStatus,
+} from "./submit";
