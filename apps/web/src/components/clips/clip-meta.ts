@@ -22,9 +22,12 @@ export function formatDuration(s: number | null | undefined): string | null {
 
 export function formatDate(d: Date | string | null | undefined): string | null {
   if (!d) return null;
+  // Fixed locale and timezone: client components render this on the server and again in the
+  // browser, and both must produce the same string or hydration breaks.
   return new Date(d).toLocaleDateString("en-GB", {
     day: "numeric",
     month: "short",
     year: "numeric",
+    timeZone: "UTC",
   });
 }
