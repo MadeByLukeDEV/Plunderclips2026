@@ -24,6 +24,13 @@ const serverSchema = z.object({
   TURNSTILE_SITE_KEY: z.string().optional(),
   TURNSTILE_SECRET_KEY: z.string().optional(),
   IP_HASH_SALT: z.string().min(16).optional(),
+  // Client IP (see ip.ts): proxies we trust, counted from the right of X-Forwarded-For, or one
+  // header a CDN sets (e.g. cf-connecting-ip). Defaults fit Dokploy's Traefik alone.
+  TRUSTED_PROXY_HOPS: z.coerce.number().int().min(1).max(5).default(1),
+  CLIENT_IP_HEADER: z
+    .string()
+    .regex(/^[a-z0-9-]{1,64}$/i)
+    .optional(),
 });
 
 export type ServerEnv = z.infer<typeof serverSchema>;
@@ -36,7 +43,10 @@ let cached: ServerEnv | undefined;
  */
 export function env(): ServerEnv {
   if (cached) return cached;
-  const parsed = serverSchema.safeParse(process.env);
+  // An empty variable counts as unset: compose passes `${VAR:-}` as "", which would otherwise fail
+  // patterns like CLIENT_IP_HEADER's or count as "configured" for optional keys.
+  const raw = Object.fromEntries(Object.entries(process.env).filter(([, v]) => v !== ""));
+  const parsed = serverSchema.safeParse(raw);
   if (!parsed.success) {
     const issues = parsed.error.issues.map((i) => `  ${i.path.join(".")}: ${i.message}`).join("\n");
     throw new Error(`Invalid environment variables:\n${issues}`);

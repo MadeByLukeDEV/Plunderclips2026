@@ -52,6 +52,8 @@ async function Content({ params }: Props) {
           last seven days.
         </p>
       ) : null}
+      {/* Keeps the heading outline h1 → h2 → h3 (card titles are h3). */}
+      <h2 className="sr-only">Clips</h2>
       <div className="mt-10">
         {clips.length ? (
           <ClipGrid clips={clips} />

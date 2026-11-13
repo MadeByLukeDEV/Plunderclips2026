@@ -10,6 +10,9 @@ import { redisStorage } from "./redis-storage";
 
 type SocialProviders = NonNullable<BetterAuthOptions["socialProviders"]>;
 
+/** Internal header carrying the trusted client IP from the route handler to Better Auth. */
+export const CLIENT_IP_HEADER = "x-plunderclips-client-ip";
+
 export const SUPPORTED_PROVIDERS = ["twitch", "discord", "kick", "google"] as const;
 export type ProviderId = (typeof SUPPORTED_PROVIDERS)[number];
 
@@ -68,7 +71,9 @@ function createAuth() {
     rateLimit: { enabled: true, storage: "secondary-storage" },
     advanced: {
       useSecureCookies: e.NODE_ENV === "production",
-      ipAddress: { ipAddressHeaders: ["x-forwarded-for", "x-real-ip"] },
+      // Set by our route handler from clientIp() (any copy the client sends is dropped there), so
+      // Better Auth's rate limits use the same trusted IP as the rest of the app.
+      ipAddress: { ipAddressHeaders: [CLIENT_IP_HEADER] },
     },
     plugins: [
       admin({ ac, roles, defaultRole: "user", adminRoles: ["admin"] }),

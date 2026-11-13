@@ -357,15 +357,47 @@ describe("safety", () => {
     spy.mockRestore();
   });
 
-  it("ignores a response that was redirected off the allowed hosts", async () => {
-    const redirected: FetchLike = async () => {
-      const res = new Response(JSON.stringify({ title: "evil" }), { status: 200 });
-      Object.defineProperty(res, "url", { value: "https://evil.example/oembed" });
-      return res;
-    };
+  it("never requests a redirect hop off the allowed hosts", async () => {
+    const f = fakeFetch({
+      "https://medal.tv/clips/": {
+        status: 302,
+        headers: { location: "http://169.254.169.254/latest/meta-data/" },
+      },
+      "http://169.254.169.254/": { html: "secret" },
+    });
     expect(
-      await fetchClipMetadata(clip("https://youtu.be/dQw4w9WgXcQ"), { fetch: redirected }),
+      await fetchClipMetadata(clip("https://medal.tv/clips/jb2lZgShoBw9q2p5H"), { fetch: f.impl }),
     ).toBeNull();
+    expect(f.calls.map((c) => c.url)).toEqual(["https://medal.tv/clips/jb2lZgShoBw9q2p5H"]);
+    expect(f.calls[0]!.init!.redirect).toBe("manual");
+  });
+
+  it("follows redirects that stay on allowed hosts", async () => {
+    const f = fakeFetch({
+      "https://medal.tv/clips/jb2lZgShoBw9q2p5H": {
+        status: 301,
+        headers: { location: "/games/sea-of-thieves/clips/jb2lZgShoBw9q2p5H/slug" },
+      },
+      "https://medal.tv/games/": { html: '<meta property="og:title" content="After redirect">' },
+    });
+    const m = await fetchClipMetadata(clip("https://medal.tv/clips/jb2lZgShoBw9q2p5H"), {
+      fetch: f.impl,
+    });
+    expect(m?.title).toBe("After redirect");
+    expect(f.calls).toHaveLength(2);
+  });
+
+  it("gives up after a few redirects", async () => {
+    const f = fakeFetch({
+      "https://medal.tv/clips/": {
+        status: 302,
+        headers: { location: "https://medal.tv/clips/jb2lZgShoBw9q2p5H" },
+      },
+    });
+    expect(
+      await fetchClipMetadata(clip("https://medal.tv/clips/jb2lZgShoBw9q2p5H"), { fetch: f.impl }),
+    ).toBeNull();
+    expect(f.calls).toHaveLength(4);
   });
 
   it("caps the body it reads", async () => {

@@ -86,8 +86,9 @@ async function Content({ params }: Props) {
                 <ClipStats clipId={clip.id} />
               </Suspense>
             </div>
-            <dl className="text-muted-foreground mt-6 grid gap-3 text-sm">
-              <div className="flex items-center gap-2">
+            {/* Each dt/dd pair sits in its own direct child div: the only nesting <dl> allows. */}
+            <dl className="text-muted-foreground mt-6 flex flex-wrap gap-x-4 gap-y-3 text-sm">
+              <div className="flex basis-full items-center gap-2">
                 <dt className="sr-only">Streamer</dt>
                 <dd className="text-foreground flex items-center gap-2 font-medium">
                   {meta.icon ? <PlatformIcon platform={meta.icon} className="size-5" /> : null}
@@ -105,20 +106,18 @@ async function Content({ params }: Props) {
                   )}
                 </dd>
               </div>
-              <div className="flex flex-wrap gap-x-4 gap-y-1 font-mono text-xs tracking-wide">
-                {duration ? (
-                  <div>
-                    <dt className="sr-only">Length</dt>
-                    <dd>{duration}</dd>
-                  </div>
-                ) : null}
-                {date ? (
-                  <div>
-                    <dt className="sr-only">Added</dt>
-                    <dd>Added {date}</dd>
-                  </div>
-                ) : null}
-              </div>
+              {duration ? (
+                <div className="font-mono text-xs tracking-wide">
+                  <dt className="sr-only">Length</dt>
+                  <dd>{duration}</dd>
+                </div>
+              ) : null}
+              {date ? (
+                <div className="font-mono text-xs tracking-wide">
+                  <dt className="sr-only">Added</dt>
+                  <dd>Added {date}</dd>
+                </div>
+              ) : null}
             </dl>
             {clip.tags.length ? (
               <ul className="mt-6 flex flex-wrap gap-2" aria-label="Tags">
@@ -164,8 +163,9 @@ async function Content({ params }: Props) {
 
 function Fallback() {
   return (
+    // A full screen tall, so the footer starts below the fold and doesn't jump when content streams in.
     <section
-      className="pt-[calc(var(--header-h)+32px)] pb-16 md:pt-[calc(var(--header-h)+48px)]"
+      className="min-h-svh pt-[calc(var(--header-h)+32px)] pb-16 md:pt-[calc(var(--header-h)+48px)]"
       aria-hidden
     >
       <div className="wrap grid-12 content-start">

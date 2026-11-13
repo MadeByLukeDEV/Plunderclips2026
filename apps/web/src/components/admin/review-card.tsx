@@ -45,7 +45,7 @@ type Props = {
 };
 
 const field =
-  "border-input bg-background focus-visible:border-ring focus-visible:ring-ring/50 h-11 w-full rounded-lg border px-3 text-sm outline-none focus-visible:ring-[3px]";
+  "border-input bg-background text-foreground focus-visible:border-ring focus-visible:ring-ring/50 h-11 w-full rounded-lg border px-3 text-sm outline-none focus-visible:ring-[3px]";
 
 export function ReviewCard({ clip, playerSrc, tags, sections, reasons, canFeature }: Props) {
   const { pending, result, run } = useAdminAction();

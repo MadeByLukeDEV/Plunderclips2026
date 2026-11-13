@@ -48,7 +48,6 @@ function Round({ siteKey, signedInAs, onAgain }: Props & { onAgain: () => void }
           defaultValue={err?.url}
           aria-invalid={urlError || undefined}
           aria-describedby="url-help"
-          autoFocus
         />
         <p id="url-help" className="text-muted-foreground text-sm">
           Twitch, YouTube, Kick, Medal, TikTok or X. Clips, videos and Shorts all work.
@@ -81,7 +80,7 @@ function Round({ siteKey, signedInAs, onAgain }: Props & { onAgain: () => void }
           rows={3}
           maxLength={NOTE_MAX}
           defaultValue={err?.note}
-          placeholder="Whose stream it is, what to watch for"
+          placeholder="Whose stream it is, what to watch for…"
           className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 dark:bg-input/30 w-full rounded-lg border bg-transparent px-3 py-2 text-base outline-none focus-visible:ring-[3px] md:text-sm"
         />
       </div>
@@ -97,7 +96,7 @@ function Round({ siteKey, signedInAs, onAgain }: Props & { onAgain: () => void }
       <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
         <Button type="submit" size="lg" disabled={pending}>
           {pending ? <Loader2 className="size-5 animate-spin" /> : null}
-          {pending ? "Checking the link" : "Submit clip"}
+          {pending ? "Checking the link…" : "Submit clip"}
         </Button>
         <p className="text-muted-foreground text-sm">
           {signedInAs ? (
