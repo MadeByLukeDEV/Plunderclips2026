@@ -1,30 +1,80 @@
-# Production stack for Dokploy (Compose app). Postgres is external (your server):
-# set DATABASE_URL in Dokploy's environment tab.
+# Production stack for Dokploy (Compose app). See docs/deploy.md.
+#
+# Postgres is external (your server): set DATABASE_URL in Dokploy's Environment tab.
+# Dokploy writes that tab to a .env file next to this compose file, which fills the ${...} below.
+# Required variables use ${VAR:?...}, so a missing one stops the deploy with a clear message
+# instead of starting a half-configured site.
 name: plunderclips
+
+x-app-env: &app-env
+  NODE_ENV: production
+  DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL in Dokploy}
+  REDIS_URL: redis://redis:6379
+  BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?set BETTER_AUTH_SECRET (32+ random chars)}
+  BETTER_AUTH_URL: ${BETTER_AUTH_URL:?set BETTER_AUTH_URL to the public https URL}
+  IP_HASH_SALT: ${IP_HASH_SALT:?set IP_HASH_SALT (16+ random chars)}
+  TURNSTILE_SITE_KEY: ${TURNSTILE_SITE_KEY:-}
+  TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
+  TWITCH_CLIENT_ID: ${TWITCH_CLIENT_ID:-}
+  TWITCH_CLIENT_SECRET: ${TWITCH_CLIENT_SECRET:-}
+  DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID:-}
+  DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET:-}
+  KICK_CLIENT_ID: ${KICK_CLIENT_ID:-}
+  KICK_CLIENT_SECRET: ${KICK_CLIENT_SECRET:-}
+  GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+  GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+  BETTER_AUTH_API_KEY: ${BETTER_AUTH_API_KEY:-}
+
 services:
+  # Applies pending Drizzle migrations, then exits. `web` only starts once it succeeded.
   migrate:
     build: { context: .., dockerfile: docker/Dockerfile, target: migrate }
     environment:
-      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL in Dokploy}
     restart: "no"
+
   web:
-    build: { context: .., dockerfile: docker/Dockerfile, target: runner }
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+      target: runner
+      args:
+        SITE_URL: ${BETTER_AUTH_URL:?set BETTER_AUTH_URL to the public https URL}
     depends_on:
       migrate: { condition: service_completed_successfully }
       redis: { condition: service_healthy }
-    env_file: [.env]
-    environment:
-      REDIS_URL: redis://redis:6379
+    environment: *app-env
     restart: unless-stopped
+    # Reached only through Dokploy's Traefik (add the domain in the Domains tab, port 3000).
+    # Never publish this port: the app trusts x-forwarded-for from the proxy for rate limits.
     expose: ["3000"]
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+
   redis:
     image: redis:8-alpine
-    command: ["redis-server", "--appendonly", "yes"]
+    # AOF persistence keeps sessions and rate-limit windows across restarts; maxmemory stops a
+    # flood of rate-limit keys from eating the host's RAM.
+    command:
+      [
+        "redis-server",
+        "--appendonly",
+        "yes",
+        "--maxmemory",
+        "256mb",
+        "--maxmemory-policy",
+        "volatile-lru",
+      ]
     volumes: [redisdata:/data]
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       retries: 10
+
 volumes:
   redisdata:

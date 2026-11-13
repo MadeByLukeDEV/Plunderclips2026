@@ -11,8 +11,9 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
     "generate": "drizzle-kit generate",
-    "migrate": "drizzle-kit migrate",
-    "studio": "drizzle-kit studio"
+    "migrate": "node --env-file-if-exists=../../apps/web/.env.local migrate.mjs",
+    "studio": "drizzle-kit studio",
+    "migrate:kit": "drizzle-kit migrate"
   },
   "dependencies": {
     "@plunderclips/shared": "workspace:*",
