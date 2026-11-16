@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { AuditRow } from "@plunderclips/moderation";
+import { LocalTime } from "@/components/local-time";
 
 const verbs: Record<string, string> = {
   "clip.approve": "published a clip",
@@ -38,14 +39,6 @@ function detail(r: AuditRow): string | null {
   return null;
 }
 
-const time = (d: Date) =>
-  new Date(d).toLocaleString("en-GB", {
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-
 export function AuditTable({ rows }: { rows: AuditRow[] }) {
   if (!rows.length)
     return (
@@ -78,7 +71,7 @@ export function AuditTable({ rows }: { rows: AuditRow[] }) {
             return (
               <tr key={r.id}>
                 <td className="text-muted-foreground px-4 py-3 font-mono text-xs whitespace-nowrap">
-                  {time(r.createdAt)}
+                  <LocalTime value={r.createdAt} format="datetime" />
                 </td>
                 <td className="px-4 py-3">{r.actorName ?? "deleted account"}</td>
                 <td className="px-4 py-3">

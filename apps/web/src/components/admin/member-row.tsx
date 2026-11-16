@@ -4,9 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@plunderclips/ui/components/button";
 import { banAction, rolesAction, unbanAction } from "@/app/admin/actions";
-import { formatDate } from "@/components/clips/clip-meta";
 import { Avatar } from "@/components/creators/avatar";
 import { ActionMessage, useAdminAction } from "./use-action";
+import { LocalTime } from "@/components/local-time";
 
 export type MemberView = {
   id: string;
@@ -80,7 +80,8 @@ export function MemberRow({
             </span>
           ) : null}
           <span className="text-muted-foreground font-mono text-xs tabular-nums">
-            {m.clips} {m.clips === 1 ? "clip" : "clips"} · joined {formatDate(m.createdAt)}
+            {m.clips} {m.clips === 1 ? "clip" : "clips"} · joined{" "}
+            <LocalTime value={m.createdAt} format="date" />
           </span>
         </div>
       </div>
@@ -88,7 +89,14 @@ export function MemberRow({
       {m.banned && m.banReason ? (
         <p className="text-muted-foreground mt-2 text-sm">
           Banned for: {m.banReason}
-          {m.banExpires ? ` (until ${formatDate(m.banExpires)})` : " (no end date)"}
+          {m.banExpires ? (
+            <>
+              {" "}
+              (until <LocalTime value={m.banExpires} format="datetime" />)
+            </>
+          ) : (
+            " (no end date)"
+          )}
         </p>
       ) : null}
 

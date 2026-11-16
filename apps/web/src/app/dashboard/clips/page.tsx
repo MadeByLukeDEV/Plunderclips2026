@@ -6,11 +6,12 @@ import { listMyClips, myClipStats, type ClipStatus } from "@plunderclips/clips";
 import { Button } from "@plunderclips/ui/components/button";
 import { PlatformIcon } from "@plunderclips/ui/components/platform-icon";
 import { cn } from "@plunderclips/ui/lib/utils";
-import { formatDate, platformMeta } from "@/components/clips/clip-meta";
+import { platformMeta } from "@/components/clips/clip-meta";
 import { ClipThumb } from "@/components/clips/clip-thumb";
 import { ClipStatusBadge } from "@/components/dashboard/clip-status";
 import { WithdrawButton } from "@/components/dashboard/withdraw-button";
 import { requireSession } from "@/lib/auth-guard";
+import { LocalTime } from "@/components/local-time";
 
 export const metadata: Metadata = { title: "Your clips" };
 
@@ -86,7 +87,7 @@ async function List({ searchParams }: Props) {
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                     <ClipStatusBadge status={c.status} />
                     <span className="text-muted-foreground font-mono text-xs">
-                      Sent {formatDate(c.createdAt)}
+                      Sent <LocalTime value={c.createdAt} format="date" />
                     </span>
                   </div>
                   <p className="mt-2 line-clamp-2 font-medium">{c.title}</p>

@@ -9,13 +9,12 @@ import { cn } from "@plunderclips/ui/lib/utils";
 import { deleteAction, markReadAction, sendAction } from "@/app/chat/actions";
 import { olderMessagesAction } from "@/app/chat/history-action";
 import { Avatar } from "@/components/creators/avatar";
+import { formatTime, useHydrated } from "@/components/local-time";
 import { ReportButton } from "@/components/report-button";
 import { EmotePicker } from "./emote-picker";
 import { EmoteText } from "./emote-text";
 
 const MAX = 2000;
-const time = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit" });
-const day = new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short" });
 
 function merge(list: ChatMessageWire[], incoming: ChatMessageWire[]): ChatMessageWire[] {
   const byId = new Map(list.map((m) => [m.id, m]));
@@ -165,7 +164,9 @@ export function Thread({
       setMessages((l) => l.map((m) => (m.id === id ? { ...m, body: "", deleted: "author" } : m)));
   }
 
-  const days = messages.map((m) => day.format(new Date(m.createdAt)));
+  // Day separators follow the viewer's timezone once the page is live (UTC before that).
+  const local = useHydrated();
+  const days = messages.map((m) => formatTime(m.createdAt, "day", local));
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <ol
@@ -231,7 +232,7 @@ export function Thread({
                         dateTime={m.createdAt}
                         className="text-muted-foreground font-mono text-xs"
                       >
-                        {time.format(at)}
+                        {formatTime(m.createdAt, "time", local)}
                       </time>
                     </p>
                   )}

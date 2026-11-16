@@ -7,17 +7,11 @@ import { cn } from "@plunderclips/ui/lib/utils";
 import { MarkAllRead } from "@/components/notifications/mark-all-read";
 import { toView } from "@/components/notifications/describe";
 import { requireSession } from "@/lib/auth-guard";
+import { LocalTime } from "@/components/local-time";
 
 export const metadata: Metadata = { title: "Notifications", robots: { index: false } };
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
-
-const when = new Intl.DateTimeFormat("en-GB", {
-  day: "numeric",
-  month: "short",
-  hour: "2-digit",
-  minute: "2-digit",
-});
 
 export default function NotificationsPage(props: Props) {
   return (
@@ -80,12 +74,11 @@ async function List({ searchParams }: Props) {
                   <span className="text-muted-foreground mt-1 block text-sm">{n.detail}</span>
                 ) : null}
               </span>
-              <time
-                dateTime={n.createdAt}
+              <LocalTime
+                value={n.createdAt}
+                format="datetime"
                 className="text-muted-foreground shrink-0 font-mono text-xs"
-              >
-                {when.format(new Date(n.createdAt))}
-              </time>
+              />
             </Link>
           </li>
         ))}

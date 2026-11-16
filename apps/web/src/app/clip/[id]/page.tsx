@@ -9,10 +9,11 @@ import { ReportButton } from "@/components/report-button";
 import { Button } from "@plunderclips/ui/components/button";
 import { PlatformIcon } from "@plunderclips/ui/components/platform-icon";
 import { ClipGrid } from "@/components/clips/clip-card";
-import { formatDate, formatDuration, platformMeta } from "@/components/clips/clip-meta";
+import { formatDuration, platformMeta } from "@/components/clips/clip-meta";
 import { ClipPlayer } from "@/components/clips/clip-player";
 import { ClipStats, ClipStatsSkeleton } from "@/components/clips/clip-stats";
 import { clipPage, playerSrc } from "@/lib/clips-data";
+import { LocalTime } from "@/components/local-time";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -51,7 +52,6 @@ async function Content({ params }: Props) {
   const { clip, related, sections } = data;
   const meta = platformMeta[clip.platform];
   const duration = formatDuration(clip.durationSeconds);
-  const date = formatDate(clip.approvedAt);
 
   return (
     <>
@@ -112,10 +112,12 @@ async function Content({ params }: Props) {
                   <dd>{duration}</dd>
                 </div>
               ) : null}
-              {date ? (
+              {clip.approvedAt ? (
                 <div className="font-mono text-xs tracking-wide">
                   <dt className="sr-only">Added</dt>
-                  <dd>Added {date}</dd>
+                  <dd>
+                    Added <LocalTime value={clip.approvedAt} format="date" />
+                  </dd>
                 </div>
               ) : null}
             </dl>
