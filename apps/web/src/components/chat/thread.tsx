@@ -55,7 +55,7 @@ export function Thread({
   const lastRead = useRef(0);
   const draftBox = useRef<HTMLTextAreaElement>(null);
   const emoteMap = useMemo(
-    () => new Map([...emotes.global, ...emotes.channel].map((e) => [e.code, e])),
+    () => new Map([...emotes.global, ...emotes.site, ...emotes.channel].map((e) => [e.code, e])),
     [emotes],
   );
 

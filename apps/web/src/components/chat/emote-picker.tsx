@@ -6,7 +6,7 @@ import type { Emote, EmoteSets } from "@plunderclips/social";
 import { cn } from "@plunderclips/ui/lib/utils";
 import { EMOJI } from "./emoji-data";
 
-type Tab = "emoji" | "channel" | "7tv" | "bttv";
+type Tab = "emoji" | "channel" | "site" | "7tv" | "bttv";
 
 /** Emoji plus the channel's 7TV and BTTV emotes, with search. Picking inserts into the draft. */
 export function EmotePicker({ sets, onPick }: { sets: EmoteSets; onPick: (text: string) => void }) {
@@ -35,6 +35,7 @@ export function EmotePicker({ sets, onPick }: { sets: EmoteSets; onPick: (text: 
     [
       ["emoji", "Emoji", 1],
       ["channel", "Channel", sets.channel.length],
+      ["site", "Site", sets.site.length],
       ["7tv", "7TV", sets.global.filter((e) => e.provider === "7tv").length],
       ["bttv", "BTTV", sets.global.filter((e) => e.provider === "bttv").length],
     ] as const
@@ -45,9 +46,11 @@ export function EmotePicker({ sets, onPick }: { sets: EmoteSets; onPick: (text: 
     const list =
       tab === "channel"
         ? sets.channel
-        : tab === "emoji"
-          ? []
-          : sets.global.filter((e) => e.provider === tab);
+        : tab === "site"
+          ? sets.site
+          : tab === "emoji"
+            ? []
+            : sets.global.filter((e) => e.provider === tab);
     return needle ? list.filter((e) => e.code.toLowerCase().includes(needle)) : list;
   }, [tab, sets, needle]);
 
@@ -149,7 +152,7 @@ export function EmotePicker({ sets, onPick }: { sets: EmoteSets; onPick: (text: 
           </div>
           {tab === "channel" ? (
             <p className="text-muted-foreground text-xs">
-              From the 7TV and BTTV sets of members who linked Twitch.
+              From the crew&apos;s 7TV set and the 7TV and BTTV emotes of members who linked Twitch.
             </p>
           ) : null}
         </div>

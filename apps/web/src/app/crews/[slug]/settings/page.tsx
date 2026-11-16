@@ -52,6 +52,7 @@ async function Settings({ params }: Props) {
             motto: crew.motto,
             banner: crew.banner,
             joinPolicy: crew.joinPolicy,
+            sevenTvSetId: crew.sevenTvSetId,
           }}
         />
       </div>

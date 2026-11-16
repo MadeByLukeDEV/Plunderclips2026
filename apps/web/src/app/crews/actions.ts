@@ -70,6 +70,10 @@ function fieldMessage(e: CrewFieldError): string {
       return "Pick one of the banners.";
     case "joinPolicy":
       return "Choose how people join.";
+    case "sevenTvSet":
+      return e.error === "invalid"
+        ? "Paste a 7TV emote set link, like 7tv.app/emote-sets/01H…"
+        : "7TV doesn't know that set. Check the link, or try again if 7TV is down.";
   }
 }
 
@@ -94,6 +98,7 @@ const fields = (f: FormData) => ({
   motto: text(f, "motto", 600),
   banner: text(f, "banner", 40),
   joinPolicy: text(f, "joinPolicy", 20),
+  sevenTvSet: text(f, "sevenTvSet", 300),
 });
 
 export async function createCrewAction(_p: CrewFormState, form: FormData): Promise<CrewFormState> {

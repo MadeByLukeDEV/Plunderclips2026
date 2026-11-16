@@ -1,5 +1,5 @@
 import { afterAll, describe, expect, it } from "vitest";
-import { parse7tv, parseBttv } from "../src/emotes";
+import { parse7tv, parseBttv, parseSevenTvSetRef } from "../src/emotes";
 
 describe("emote parsing", () => {
   it("keeps listed 7TV emotes and builds the URL from the id only", () => {
@@ -49,6 +49,18 @@ describe("emote parsing", () => {
   });
 });
 
+describe("7TV set links", () => {
+  it("takes a set link or a bare id, and nothing else", () => {
+    const id = "01HKQT8EWR000ESSWF3625XCS4";
+    expect(parseSevenTvSetRef(`https://7tv.app/emote-sets/${id}`)).toBe(id);
+    expect(parseSevenTvSetRef(`7tv.app/emote-sets/${id.toLowerCase()}/`)).toBe(id);
+    expect(parseSevenTvSetRef(`  ${id} `)).toBe(id);
+    expect(parseSevenTvSetRef(`https://evil.example/emote-sets/${id}`)).toBeNull();
+    expect(parseSevenTvSetRef("https://7tv.app/emote-sets/short")).toBeNull();
+    expect(parseSevenTvSetRef("")).toBeNull();
+  });
+});
+
 /** Per-channel sets against the local Postgres and Redis, with a fake 7TV/BTTV. */
 const url = process.env.DATABASE_URL;
 
@@ -57,6 +69,7 @@ describe.skipIf(!url)("emotes for a channel (Postgres + Redis)", async () => {
     REDIS_URL: process.env.REDIS_URL ?? "redis://localhost:6379",
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET ?? "x".repeat(32),
     BETTER_AUTH_URL: process.env.BETTER_AUTH_URL ?? "http://localhost:3000",
+    SEVENTV_EMOTE_SETS: "01HSXTE0000000000000000001",
   });
   const { db, schema } = await import("@plunderclips/db");
   const { like } = await import("drizzle-orm");
@@ -76,7 +89,12 @@ describe.skipIf(!url)("emotes for a channel (Postgres + Redis)", async () => {
     await db()
       .delete(schema.user)
       .where(like(schema.user.id, `test-${run}-%`));
-    await redis().del(`emotes:twitch:v1:${twitchId}`, "emotes:global:v1");
+    await redis().del(
+      `emotes:twitch:v1:${twitchId}`,
+      "emotes:global:v1",
+      "emotes:7tvset:v1:01HSXTE0000000000000000001",
+      "emotes:7tvset:v1:01HCREW0000000000000000001",
+    );
   });
 
   it("merges the global sets with each member's Twitch emotes, theirs first", async () => {
@@ -110,22 +128,77 @@ describe.skipIf(!url)("emotes for a channel (Postgres + Redis)", async () => {
     const calls: string[] = [];
     const fake = async (u: string) => {
       calls.push(u);
-      const body = u.includes(`/users/twitch/${twitchId}`)
-        ? u.includes("7tv")
+      const body = u.endsWith("/emote-sets/01HSXTE0000000000000000001")
+        ? {
+            id: "01HSXTE0000000000000000001",
+            emotes: [
+              { id: "01HSITEEMOTE00000000000001", name: "Galleon", data: {} },
+              { id: "01HSITEEMOTE00000000000002", name: "Sloop", data: {} },
+            ],
+          }
+        : u.endsWith("/emote-sets/01HCREW0000000000000000001")
           ? {
-              emote_set: {
-                emotes: [{ id: "01HCHANNEL0000000000000001", name: "Sloop", data: {} }],
-              },
+              id: "01HCREW0000000000000000001",
+              emotes: [{ id: "01HCREWEMOTE00000000000001", name: "Kraken", data: {} }],
             }
-          : { channelEmotes: [{ id: "64aaaaaaaaaaaaaaaaaaaaaa", code: "PogU" }], sharedEmotes: [] }
-        : u.includes("7tv")
-          ? { emotes: [{ id: "01HGLOBAL00000000000000001", name: "PogU", data: {} }] }
-          : [{ id: "64bbbbbbbbbbbbbbbbbbbbbb", code: "CiGrip" }];
+          : u.includes(`/users/twitch/${twitchId}`)
+            ? u.includes("7tv")
+              ? {
+                  emote_set: {
+                    emotes: [{ id: "01HCHANNEL0000000000000001", name: "Sloop", data: {} }],
+                  },
+                }
+              : {
+                  channelEmotes: [{ id: "64aaaaaaaaaaaaaaaaaaaaaa", code: "PogU" }],
+                  sharedEmotes: [],
+                }
+            : u.includes("7tv")
+              ? { emotes: [{ id: "01HGLOBAL00000000000000001", name: "PogU", data: {} }] }
+              : [{ id: "64bbbbbbbbbbbbbbbbbbbbbb", code: "CiGrip" }];
       return new Response(JSON.stringify(body), { status: 200 });
     };
 
+    // The captain attaches a crew set; a bad link and an unknown set are refused.
+    expect(
+      await crews.updateCrew(
+        uid("streamer"),
+        r.crew.id,
+        { slug: r.crew.slug, name: "E", sevenTvSet: "nope" },
+        fake,
+      ),
+    ).toEqual({ ok: false, errors: [{ field: "sevenTvSet", error: "invalid" }] });
+    expect(
+      await crews.updateCrew(
+        uid("streamer"),
+        r.crew.id,
+        {
+          slug: r.crew.slug,
+          name: "E",
+          sevenTvSet: "https://7tv.app/emote-sets/01HMXSSNG00000000000000001",
+        },
+        async () => new Response("{}", { status: 404 }),
+      ),
+    ).toEqual({ ok: false, errors: [{ field: "sevenTvSet", error: "not_found" }] });
+    const saved = await crews.updateCrew(
+      uid("streamer"),
+      r.crew.id,
+      {
+        slug: r.crew.slug,
+        name: "E",
+        joinPolicy: "open",
+        sevenTvSet: "https://7tv.app/emote-sets/01HCREW0000000000000000001",
+      },
+      fake,
+    );
+    expect(saved.ok && "crew" in saved && saved.crew.sevenTvSetId).toBe(
+      "01HCREW0000000000000000001",
+    );
+
     const sets = await emotesForChannel(channelId, fake);
-    expect(sets.channel.map((e) => e.code)).toEqual(["Sloop", "PogU"]);
+    // Crew set first, then the streamer's own emotes.
+    expect(sets.channel.map((e) => e.code)).toEqual(["Kraken", "Sloop", "PogU"]);
+    // The site set keeps what the channel doesn't already have.
+    expect(sets.site.map((e) => e.code)).toEqual(["Galleon"]);
     // The streamer's PogU wins over the global one with the same code.
     expect(sets.global.map((e) => e.code)).not.toContain("PogU");
     expect(calls.some((c) => c.includes(twitchId))).toBe(true);

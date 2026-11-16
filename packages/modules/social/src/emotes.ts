@@ -1,19 +1,23 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { db, schema } from "@plunderclips/db";
-import { logger, redis } from "@plunderclips/shared";
+import { env, logger, redis } from "@plunderclips/shared";
 
-const { account, chatChannel, chatParticipant, crewMember } = schema;
+const { account, chatChannel, chatParticipant, crew, crewMember } = schema;
 
 export type EmoteProvider = "7tv" | "bttv";
 
 /** One emote as the chat shows it: typed as `code`, drawn from `url`. */
 export type Emote = { code: string; url: string; provider: EmoteProvider; animated: boolean };
 
-/** What a channel can use: global sets, then each member's own channel emotes. */
+/**
+ * What a channel can use, in the order a code is looked up: the crew's attached 7TV set and the
+ * members' own Twitch channel emotes, then the site's 7TV sets, then the 7TV and BTTV globals.
+ */
 export type EmoteSets = {
-  global: Emote[];
-  /** Emotes from the members' own Twitch channels (7TV and BTTV), by code. */
   channel: Emote[];
+  /** SEVENTV_EMOTE_SETS: sets the site keeps on 7tv.app for every chat. */
+  site: Emote[];
+  global: Emote[];
 };
 
 type FetchLike = (url: string, init?: RequestInit) => Promise<Response>;
@@ -23,6 +27,8 @@ const ID = /^[0-9A-Za-z]{10,40}$/;
 /** Emote codes are single words of ordinary characters, 1-40 long. */
 const CODE = /^[\p{L}\p{N}_:()<>!?.'-]{1,40}$/u;
 const TWITCH_ID = /^[0-9]{1,20}$/;
+/** 7TV emote set IDs are ULIDs (26 chars of Crockford base32). */
+const SET_ID = /^[0-9A-HJKMNP-TV-Z]{26}$/;
 
 const GLOBAL_TTL = 6 * 60 * 60;
 const USER_TTL = 60 * 60;
@@ -132,6 +138,47 @@ export function twitchChannelEmotes(
   });
 }
 
+/**
+ * A 7TV emote set from what someone pasted: a set link (7tv.app/emote-sets/<id>) or the bare id.
+ * null if it doesn't look like one.
+ */
+export function parseSevenTvSetRef(input: string): string | null {
+  const v = input.trim();
+  if (!v) return null;
+  const fromUrl = v.match(
+    /^(?:https?:\/\/)?(?:www\.)?7tv\.app\/emote-sets\/([0-9A-Za-z]{26})\/?(?:[?#].*)?$/,
+  );
+  const id = (fromUrl?.[1] ?? v).toUpperCase();
+  return SET_ID.test(id) ? id : null;
+}
+
+/** One 7TV emote set by id; empty if it doesn't exist or 7TV is down. */
+export function sevenTvSet(id: string, fetchImpl: FetchLike = fetch): Promise<Emote[]> {
+  if (!SET_ID.test(id)) return Promise.resolve([]);
+  return cached(`emotes:7tvset:v1:${id}`, USER_TTL, async () =>
+    parse7tv(await getJson(`https://7tv.io/v3/emote-sets/${id}`, fetchImpl)),
+  );
+}
+
+/** Whether a 7TV set exists, checked live (for saving it on a crew). */
+export async function sevenTvSetExists(id: string, fetchImpl: FetchLike = fetch): Promise<boolean> {
+  if (!SET_ID.test(id)) return false;
+  try {
+    const set = await getJson(`https://7tv.io/v3/emote-sets/${id}`, fetchImpl);
+    return !!set && typeof (set as { id?: unknown }).id === "string";
+  } catch {
+    return false;
+  }
+}
+
+function siteSetIds(): string[] {
+  return (env().SEVENTV_EMOTE_SETS ?? "")
+    .split(",")
+    .map((s) => parseSevenTvSetRef(s))
+    .filter((s): s is string => !!s)
+    .slice(0, 10);
+}
+
 /** Twitch user IDs of members who signed in with or linked Twitch. */
 async function twitchIds(userIds: string[]): Promise<string[]> {
   if (!userIds.length) return [];
@@ -142,12 +189,15 @@ async function twitchIds(userIds: string[]): Promise<string[]> {
   return [...new Set(rows.map((r) => r.id))];
 }
 
-async function channelMembers(channelId: string): Promise<string[]> {
+async function channelMembers(
+  channelId: string,
+): Promise<{ members: string[]; crewSetId: string | null }> {
   const [ch] = await db()
-    .select({ kind: chatChannel.kind, crewId: chatChannel.crewId })
+    .select({ kind: chatChannel.kind, crewId: chatChannel.crewId, setId: crew.sevenTvSetId })
     .from(chatChannel)
+    .leftJoin(crew, eq(crew.id, chatChannel.crewId))
     .where(eq(chatChannel.id, channelId));
-  if (!ch) return [];
+  if (!ch) return { members: [], crewSetId: null };
   const rows =
     ch.kind === "crew" && ch.crewId
       ? await db()
@@ -158,7 +208,7 @@ async function channelMembers(channelId: string): Promise<string[]> {
           .select({ u: chatParticipant.userId })
           .from(chatParticipant)
           .where(eq(chatParticipant.channelId, channelId));
-  return rows.map((r) => r.u);
+  return { members: rows.map((r) => r.u), crewSetId: ch.setId };
 }
 
 /** Dedupes by code; earlier wins. */
@@ -168,19 +218,27 @@ function uniq(list: Emote[]): Emote[] {
 }
 
 /**
- * The emotes a channel can use. Members' channel emotes win over global ones with the same code,
- * like in a streamer's own Twitch chat. Callers check access first.
+ * The emotes a channel can use. Closer sets win a shared code: the crew's set and the members'
+ * channel emotes over the site's sets, and those over the globals, like a streamer's own Twitch
+ * chat. Callers check access first.
  */
 export async function emotesForChannel(
   channelId: string,
   fetchImpl: FetchLike = fetch,
 ): Promise<EmoteSets> {
-  const ids = await twitchIds(await channelMembers(channelId));
-  const [global, ...perMember] = await Promise.all([
+  const { members, crewSetId } = await channelMembers(channelId);
+  const ids = await twitchIds(members);
+  const [global, site, crewSet, ...perMember] = await Promise.all([
     globalEmotes(fetchImpl),
+    Promise.all(siteSetIds().map((id) => sevenTvSet(id, fetchImpl))).then((l) => l.flat()),
+    crewSetId ? sevenTvSet(crewSetId, fetchImpl) : Promise.resolve([]),
     ...ids.slice(0, 50).map((id) => twitchChannelEmotes(id, fetchImpl)),
   ]);
-  const channel = uniq(perMember.flat()).slice(0, 2000);
-  const taken = new Set(channel.map((e) => e.code));
-  return { channel, global: uniq(global!).filter((e) => !taken.has(e.code)) };
+  const taken = new Set<string>();
+  const take = (list: Emote[], max: number) =>
+    uniq(list)
+      .filter((e) => (taken.has(e.code) ? false : (taken.add(e.code), true)))
+      .slice(0, max);
+  const channel = take([...crewSet!, ...perMember.flat()], 2000);
+  return { channel, site: take(site!, 2000), global: take(global!, 2000) };
 }

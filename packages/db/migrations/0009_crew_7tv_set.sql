@@ -1,0 +1,1 @@
+ALTER TABLE "crew" ADD COLUMN "seven_tv_set_id" text;

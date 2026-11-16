@@ -25,6 +25,8 @@ const serverSchema = z.object({
   TURNSTILE_SECRET_KEY: z.string().optional(),
   // Hostnames Turnstile tokens may be solved on (comma-separated). Default: BETTER_AUTH_URL's host.
   TURNSTILE_HOSTNAMES: z.string().optional(),
+  /** 7TV emote set IDs (comma-separated) every chat gets, e.g. a Plunderclips set kept on 7tv.app. */
+  SEVENTV_EMOTE_SETS: z.string().optional(),
   IP_HASH_SALT: z.string().min(16).optional(),
   // Client IP (see ip.ts): proxies we trust, counted from the right of X-Forwarded-For, or one
   // header a CDN sets (e.g. cf-connecting-ip). Defaults fit Dokploy's Traefik alone.

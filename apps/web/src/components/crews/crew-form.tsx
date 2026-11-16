@@ -18,6 +18,7 @@ export type CrewFormValues = {
   motto: string;
   banner: Banner;
   joinPolicy: "open" | "request";
+  sevenTvSetId: string | null;
 };
 
 const MOTTO_MAX = 160;
@@ -136,6 +137,30 @@ export function CrewForm({ initial, crewId }: { initial: CrewFormValues; crewId?
         </div>
         {err("joinPolicy")}
       </fieldset>
+
+      <div className="grid gap-2">
+        <Label htmlFor="sevenTvSet">
+          7TV emote set <span className="text-muted-foreground font-normal">(optional)</span>
+        </Label>
+        <Input
+          id="sevenTvSet"
+          name="sevenTvSet"
+          defaultValue={
+            initial.sevenTvSetId ? `https://7tv.app/emote-sets/${initial.sevenTvSetId}` : ""
+          }
+          placeholder="https://7tv.app/emote-sets/…"
+          autoComplete="off"
+          spellCheck={false}
+          className="font-mono"
+          {...invalid("sevenTvSet")}
+        />
+        {err("sevenTvSet") ?? (
+          <p className="text-muted-foreground text-sm">
+            Make a set on 7tv.app, add the emotes your crew uses, and paste its link. They show in
+            the crew channel. Changes on 7TV show up within the hour.
+          </p>
+        )}
+      </div>
 
       <fieldset className="grid gap-3">
         <legend className="mb-3 text-sm font-medium">Banner</legend>
