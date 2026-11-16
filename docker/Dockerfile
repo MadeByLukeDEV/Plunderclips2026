@@ -16,6 +16,7 @@ COPY packages/modules/clips/package.json packages/modules/clips/
 COPY packages/modules/creators/package.json packages/modules/creators/
 COPY packages/modules/moderation/package.json packages/modules/moderation/
 COPY packages/modules/social/package.json packages/modules/social/
+COPY packages/modules/notifications/package.json packages/modules/notifications/
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store pnpm install --frozen-lockfile
 
 FROM deps AS build
