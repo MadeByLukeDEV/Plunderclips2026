@@ -45,3 +45,28 @@ export {
   type JoinResult,
   type ActionResult,
 } from "./crews";
+
+export {
+  crewChannelId,
+  channelFor,
+  openDm,
+  canMessage,
+  listInbox,
+  unreadTotal,
+  listMessages,
+  sendMessage,
+  getMessage,
+  deleteMessage,
+  markRead,
+  stillInChannel,
+  toWire,
+  MESSAGE_MAX,
+  SEND_LIMIT,
+  type ChannelInfo,
+  type ChatMessage,
+  type ChatError,
+  type InboxItem,
+  type OpenDmResult,
+  type SendResult,
+} from "./chat";
+export { subscribe, type ChatEvent, type ChatMessageWire } from "./chat-bus";

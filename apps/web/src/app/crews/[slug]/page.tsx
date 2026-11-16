@@ -165,6 +165,11 @@ async function Viewer({ crew }: { crew: Crew }) {
   const kind = s.kind === "member" ? (s.role === "captain" ? "captain" : "member") : s.kind;
   return (
     <div className="grid gap-3 md:justify-items-end">
+      {kind === "captain" || kind === "member" ? (
+        <Button asChild size="lg">
+          <Link href={`/chat/crew/${crew.slug}`}>Crew chat</Link>
+        </Button>
+      ) : null}
       {kind === "captain" ? (
         <Button asChild variant="secondary" size="lg">
           <Link href={`/crews/${crew.slug}/settings`}>Crew settings</Link>

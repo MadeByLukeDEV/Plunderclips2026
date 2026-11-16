@@ -8,6 +8,8 @@ import { connection } from "next/server";
 import { channelUrl, followerCount, isFollowing, type Profile } from "@plunderclips/creators";
 import { getSession } from "@plunderclips/identity";
 import { REPORT_REASONS } from "@plunderclips/moderation";
+import { canMessage } from "@plunderclips/social";
+import { MessageButton } from "@/components/chat/message-button";
 import { ReportButton } from "@/components/report-button";
 import { Button } from "@plunderclips/ui/components/button";
 import { PlatformIcon } from "@plunderclips/ui/components/platform-icon";
@@ -178,9 +180,10 @@ async function Follow({ profile }: { profile: Profile }) {
       </Button>
     );
   }
-  const [following, followers] = await Promise.all([
+  const [following, followers, messageable] = await Promise.all([
     isFollowing(me, profile.userId),
     followerCount(profile.userId),
+    me ? canMessage(me, profile.userId) : false,
   ]);
   return (
     <div className="grid gap-3 md:justify-items-end">
@@ -190,6 +193,7 @@ async function Follow({ profile }: { profile: Profile }) {
         initial={{ following, followers }}
         signedIn={!!me}
       />
+      {messageable ? <MessageButton userId={profile.userId} handle={profile.handle} /> : null}
       <ReportButton targetType="creator" targetId={profile.userId} reasons={REPORT_REASONS} />
     </div>
   );

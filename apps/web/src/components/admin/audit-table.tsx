@@ -12,6 +12,9 @@ const verbs: Record<string, string> = {
   "user.ban": "banned a member",
   "user.unban": "unbanned a member",
   "user.role": "changed roles",
+  "crew.disband": "disbanded a crew",
+  "message.remove": "removed a chat message",
+  "report.resolve": "closed reports",
 };
 
 function target(r: AuditRow): { label: string; href: string | null } {
@@ -20,6 +23,9 @@ function target(r: AuditRow): { label: string; href: string | null } {
     return { label: r.targetId, href: `/admin/sections?s=${r.targetId}` };
   if (r.targetType === "user") return { label: "member", href: null };
   if (r.targetType === "creator") return { label: "creator page", href: null };
+  if (r.targetType === "message") return { label: "chat message", href: null };
+  if (r.targetType === "crew")
+    return { label: String((r.meta as { name?: unknown }).name ?? "crew"), href: null };
   return { label: r.targetType, href: null };
 }
 

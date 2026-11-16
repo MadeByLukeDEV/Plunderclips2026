@@ -2,7 +2,7 @@ import { sql } from "drizzle-orm";
 import { index, jsonb, pgEnum, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 import { user } from "./identity";
 
-export const reportTarget = pgEnum("report_target", ["clip", "creator"]);
+export const reportTarget = pgEnum("report_target", ["clip", "creator", "message"]);
 export const reportReason = pgEnum("report_reason", [
   "not_sot",
   "stolen",

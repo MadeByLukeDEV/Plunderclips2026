@@ -13,6 +13,7 @@ import {
   type ReportTarget,
   type ReviewInput,
 } from "@plunderclips/moderation";
+import { deleteMessage } from "@plunderclips/social";
 import { staffOrNull } from "@/lib/staff";
 
 export type ActionResult = { ok: true; message?: string } | { ok: false; message: string };
@@ -114,6 +115,22 @@ export async function resolveAction(
   return asStaff(async ({ actor }) => {
     const action = form.get("action");
     const note = (form.get("note") as string | null)?.slice(0, 500) ?? "";
+    if (action === "remove_message") {
+      if (target.targetType !== "message")
+        return { ok: false, message: "Only messages can be removed here." };
+      const removed = await deleteMessage(actor, Number(target.targetId));
+      if (!removed.ok && removed.error !== "not_found")
+        return { ok: false, message: "You don't have permission for that." };
+      const closed = await resolveReports(actor, target, {
+        action: "resolve",
+        note: note || "Message removed",
+      });
+      if (!closed.ok) return { ok: false, message: "Those reports are already closed." };
+      return {
+        ok: true,
+        message: `Message removed. Closed ${closed.closed} ${closed.closed === 1 ? "report" : "reports"}.`,
+      };
+    }
     const r =
       action === "take_down"
         ? await resolveReports(actor, target, {

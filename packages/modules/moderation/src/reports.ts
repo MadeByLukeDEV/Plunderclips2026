@@ -5,7 +5,16 @@ import { assertCan, type Actor } from "./actor";
 import { audit } from "./audit";
 import { reviewClip, type RejectReason } from "./review";
 
-const { report, clip, creatorProfile, user } = schema;
+const {
+  report,
+  clip,
+  creatorProfile,
+  user,
+  chatMessage,
+  chatChannel,
+  chatParticipant,
+  crewMember,
+} = schema;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const REPORT_REASONS = {
@@ -17,7 +26,7 @@ export const REPORT_REASONS = {
   other: "Something else",
 } as const;
 export type ReportReason = keyof typeof REPORT_REASONS;
-export type ReportTarget = "clip" | "creator";
+export type ReportTarget = "clip" | "creator" | "message";
 
 export function isReportReason(v: unknown): v is ReportReason {
   return typeof v === "string" && Object.hasOwn(REPORT_REASONS, v);
@@ -32,34 +41,40 @@ export type CreateReportResult =
 /** 10 reports an hour per reporter. */
 export const REPORT_LIMIT = { limit: 10, windowSeconds: 60 * 60 } as const;
 
-/** Anyone can report a published clip or a creator page. A second open report from the same person is a no-op. */
+/**
+ * Anyone can report a published clip or a creator page; a chat message only by someone in its
+ * channel (they're the only ones who can see it). A second open report from the same person is a
+ * no-op.
+ */
 export async function createReport(
   reporter: Reporter | null,
   input: { targetType: ReportTarget; targetId: string; reason: string; note?: string | null },
 ): Promise<CreateReportResult> {
   if (!reporter) return { ok: false, error: "no_reporter" };
-  if (!isReportReason(input.reason) || !["clip", "creator"].includes(input.targetType))
+  if (!isReportReason(input.reason) || !["clip", "creator", "message"].includes(input.targetType))
     return { ok: false, error: "bad_input" };
   const note = input.note?.trim().slice(0, 500) || null;
   if (input.reason === "other" && !note) return { ok: false, error: "bad_input" };
 
   const exists =
-    input.targetType === "clip"
-      ? UUID.test(input.targetId) &&
-        (
-          await db()
-            .select({ id: clip.id })
-            .from(clip)
-            .where(and(eq(clip.id, input.targetId), eq(clip.status, "approved")))
-            .limit(1)
-        ).length > 0
-      : (
-          await db()
-            .select({ id: creatorProfile.userId })
-            .from(creatorProfile)
-            .where(eq(creatorProfile.userId, input.targetId))
-            .limit(1)
-        ).length > 0;
+    input.targetType === "message"
+      ? "userId" in reporter && (await messageVisibleTo(input.targetId, reporter.userId))
+      : input.targetType === "clip"
+        ? UUID.test(input.targetId) &&
+          (
+            await db()
+              .select({ id: clip.id })
+              .from(clip)
+              .where(and(eq(clip.id, input.targetId), eq(clip.status, "approved")))
+              .limit(1)
+          ).length > 0
+        : (
+            await db()
+              .select({ id: creatorProfile.userId })
+              .from(creatorProfile)
+              .where(eq(creatorProfile.userId, input.targetId))
+              .limit(1)
+          ).length > 0;
   if (!exists) return { ok: false, error: "not_found" };
 
   const key = "userId" in reporter ? `u:${reporter.userId}` : `ip:${reporter.ipHash}`;
@@ -85,10 +100,39 @@ export async function createReport(
   return { ok: true, duplicate: inserted.length === 0 };
 }
 
+/** A message that isn't removed, in a channel the member is in. */
+async function messageVisibleTo(targetId: string, userId: string): Promise<boolean> {
+  if (!/^[1-9][0-9]{0,15}$/.test(targetId)) return false;
+  const [m] = await db()
+    .select({
+      deletedAt: chatMessage.deletedAt,
+      channelId: chatMessage.channelId,
+      kind: chatChannel.kind,
+      crewId: chatChannel.crewId,
+    })
+    .from(chatMessage)
+    .innerJoin(chatChannel, eq(chatChannel.id, chatMessage.channelId))
+    .where(eq(chatMessage.id, Number(targetId)));
+  if (!m || m.deletedAt) return false;
+  const [row] =
+    m.kind === "crew" && m.crewId
+      ? await db()
+          .select({ u: crewMember.userId })
+          .from(crewMember)
+          .where(and(eq(crewMember.crewId, m.crewId), eq(crewMember.userId, userId)))
+      : await db()
+          .select({ u: chatParticipant.userId })
+          .from(chatParticipant)
+          .where(
+            and(eq(chatParticipant.channelId, m.channelId), eq(chatParticipant.userId, userId)),
+          );
+  return !!row;
+}
+
 export type ReportGroup = {
   targetType: ReportTarget;
   targetId: string;
-  /** Clip title or creator display name; null when the target is gone. */
+  /** Clip title, creator display name or message excerpt; null when the target is gone. */
   label: string | null;
   href: string | null;
   targetStatus: string | null;
@@ -132,15 +176,13 @@ export async function listOpenReports(actor: Actor): Promise<ReportGroup[]> {
         targetStatus: null,
         reports: [],
       });
-    groups
-      .get(k)!
-      .reports.push({
-        id: r.id,
-        reason: r.reason,
-        note: r.note,
-        reporterName: r.reporterName,
-        createdAt: r.createdAt,
-      });
+    groups.get(k)!.reports.push({
+      id: r.id,
+      reason: r.reason,
+      note: r.note,
+      reporterName: r.reporterName,
+      createdAt: r.createdAt,
+    });
   }
 
   const clipIds = [...groups.values()]
@@ -167,8 +209,30 @@ export async function listOpenReports(actor: Actor): Promise<ReportGroup[]> {
         .innerJoin(user, eq(user.id, creatorProfile.userId))
         .where(inArray(creatorProfile.userId, creatorIds))
     : [];
+  const messageIds = [...groups.values()]
+    .filter((g) => g.targetType === "message" && /^[0-9]{1,16}$/.test(g.targetId))
+    .map((g) => Number(g.targetId));
+  const messages = messageIds.length
+    ? await db()
+        .select({
+          id: chatMessage.id,
+          body: chatMessage.body,
+          deletedAt: chatMessage.deletedAt,
+          author: creatorProfile.displayName,
+        })
+        .from(chatMessage)
+        .innerJoin(creatorProfile, eq(creatorProfile.userId, chatMessage.authorId))
+        .where(inArray(chatMessage.id, messageIds))
+    : [];
   for (const g of groups.values()) {
-    if (g.targetType === "clip") {
+    if (g.targetType === "message") {
+      const m = messages.find((x) => String(x.id) === g.targetId);
+      if (m)
+        Object.assign(g, {
+          label: m.deletedAt ? `${m.author}: (removed)` : `${m.author}: ${m.body.slice(0, 280)}`,
+          targetStatus: m.deletedAt ? "removed" : "visible",
+        });
+    } else if (g.targetType === "clip") {
       const c = clips.find((x) => x.id === g.targetId);
       if (c) Object.assign(g, { label: c.title, href: `/clip/${c.id}`, targetStatus: c.status });
     } else {
@@ -191,6 +255,8 @@ export async function openReportCount(): Promise<number> {
 
 export type ResolveInput =
   | { action: "dismiss"; note?: string }
+  /** The target was dealt with elsewhere (e.g. the chat module removed the message). */
+  | { action: "resolve"; note?: string }
   /** Clip reports only: unpublish the clip, then close its reports. */
   | { action: "take_down"; reason: RejectReason | "custom"; note?: string };
 

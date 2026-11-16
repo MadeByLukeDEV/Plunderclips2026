@@ -6,7 +6,9 @@ import { Button } from "@plunderclips/ui/components/button";
 import { reportAction, type ReportState } from "@/app/report-actions";
 
 type Props = {
-  targetType: "clip" | "creator";
+  targetType: "clip" | "creator" | "message";
+  /** Shorter trigger for dense lists (chat messages). */
+  compact?: boolean;
   targetId: string;
   reasons: Record<string, string>;
 };
@@ -15,7 +17,7 @@ const field =
   "border-input bg-background focus-visible:border-ring focus-visible:ring-ring/50 w-full rounded-lg border px-3 text-sm outline-none focus-visible:ring-[3px]";
 
 /** A quiet "Report" link that opens a short form in place. */
-export function ReportButton({ targetType, targetId, reasons }: Props) {
+export function ReportButton({ targetType, targetId, reasons, compact = false }: Props) {
   const [open, setOpen] = useState(false);
   const [state, action, pending] = useActionState<ReportState, FormData>(
     reportAction.bind(null, { targetType, targetId }),
@@ -37,7 +39,11 @@ export function ReportButton({ targetType, targetId, reasons }: Props) {
         className="text-muted-foreground hover:text-foreground inline-flex min-h-11 items-center gap-2 text-sm transition-colors"
       >
         <Flag className="size-4" aria-hidden />
-        Report {targetType === "clip" ? "this clip" : "this page"}
+        {compact ? (
+          <span className="sr-only">Report this message</span>
+        ) : (
+          <>Report {targetType === "clip" ? "this clip" : "this page"}</>
+        )}
       </button>
     );
 
@@ -47,6 +53,7 @@ export function ReportButton({ targetType, targetId, reasons }: Props) {
         <legend className="mb-1 text-sm font-medium">What&apos;s wrong?</legend>
         {Object.entries(reasons)
           .filter(([k]) => targetType === "creator" || k !== "impersonation")
+          .filter(([k]) => targetType !== "message" || (k !== "not_sot" && k !== "stolen"))
           .map(([k, label]) => (
             <label key={k} className="flex min-h-11 cursor-pointer items-center gap-3 text-sm">
               <input
