@@ -1,6 +1,6 @@
 # Plunderclips: agent guide
 
-A Sea of Thieves clip community where streamers promote their content and connect with each other. Unofficial fan project. The visual direction takes cues from seaofthieves.com (dark sea, parchment, brass, painterly, cinematic), but **all art, logos and fonts are original**. Never copy SoT trademarks or assets.
+A Sea of Thieves clip community where streamers promote their content and connect with each other. Unofficial fan project. The visual direction takes cues from seaofthieves.com (dark sea, parchment, painterly, cinematic). **Logos and fonts are original**; the only game art is the credited fan artwork under Microsoft's Game Content Usage Rules (see Design system → Art). Never copy SoT logos, fonts or UI.
 
 ## Workflow
 
@@ -38,7 +38,7 @@ Versions: TypeScript stays on 6.0.x because typescript-eslint doesn't support 7 
 - Colour roles: `primary` (brick red) is for filled buttons only; accent text, borders and highlights use `headline` (`text-headline`: mint on the deck, dark brick on parchment). Brick as small text on the deck fails contrast (3:1).
 - Type: Big Shoulders (display, `font-display`; h1/h2 are uppercase condensed caps), DM Sans (UI/body/leads), Geist Mono (labels, numbers). No serifs. Scale: `text-display`, `text-h2`, `text-h3`, `text-lead`.
 - Motion: `MotionProvider` (Lenis on the GSAP ticker), `Enter` (hero entrance, once), `WordHighlight` (statement moment), ReactBits `split-text`. Hover layer utilities: `lift`, `zoom-frame`, `link-draw`. No scroll fade-ins, no tilt, no parallax on text. Everything rests under reduced motion and nothing is hidden without JS.
-- Art: public-domain marine paintings in `apps/web/public/art` (credited in the footer). Never Sea of Thieves assets.
+- Art: Sea of Thieves artwork by Namaaay (@ArteInFlames) in `apps/web/public/art`, used under Microsoft's Game Content Usage Rules: keep the site non-commercial, keep the footer credit and the "not endorsed by or affiliated with" notice. New game art only with the artist's OK and a credit. Logos and fonts stay original; never copy Sea of Thieves logos, fonts or UI.
 - Buttons: one family (`@plunderclips/ui/components/button`), 44px minimum tap height.
 
 ## Skill routing (avoid overlap)

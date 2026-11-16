@@ -71,7 +71,7 @@ function message(e: ProfileFieldError): string {
     case "bio":
       return `Keep it to ${BIO_MAX} characters.`;
     case "banner":
-      return "Pick one of the paintings.";
+      return "Pick one of the banners.";
     default:
       return "That doesn't look like a channel name or link for this platform.";
   }

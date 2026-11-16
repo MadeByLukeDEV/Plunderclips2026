@@ -5,29 +5,6 @@ import { PlatformIcon } from "@plunderclips/ui/components/platform-icon";
 import { clipSections, mainLinks } from "./nav-data";
 import { Wordmark } from "./wordmark";
 
-const credits = [
-  {
-    label: "J. M. W. Turner, Fishermen at Sea",
-    href: "https://commons.wikimedia.org/wiki/File:Joseph_Mallord_William_Turner_-_Fishermen_at_Sea_-_Google_Art_Project.jpg",
-  },
-  {
-    label: "Ivan Aivazovsky, The Ninth Wave",
-    href: "https://commons.wikimedia.org/wiki/File:Hovhannes_Aivazovsky_-_The_Ninth_Wave_-_Google_Art_Project.jpg",
-  },
-  {
-    label: "J. M. W. Turner, The Fighting Temeraire",
-    href: "https://commons.wikimedia.org/wiki/File:Turner,_J._M._W._-_The_Fighting_T%C3%A9m%C3%A9raire_tugged_to_her_last_Berth_to_be_broken.jpg",
-  },
-  {
-    label: "Ivan Aivazovsky, A Moonlit Night at Sea",
-    href: "https://commons.wikimedia.org/wiki/File:Ivan_Konstantinovich_Aivazovsky_-_A_Moonlit_Night_at_Sea,_1885.jpg",
-  },
-  {
-    label: "Ivan Aivazovsky, Ship in the Stormy Sea",
-    href: "https://commons.wikimedia.org/wiki/File:Ivan_Aivazovsky_-_Ship_in_the_Stormy_Sea.jpg",
-  },
-];
-
 const community = [...mainLinks, { href: "/submit", label: "Submit a clip" }];
 
 const closeFacts = [
@@ -44,10 +21,7 @@ const listLabel = "font-mono text-xs tracking-wider text-muted-foreground upperc
  */
 export function SiteFooter() {
   return (
-    <footer
-      className="closing screen border-border border-t bg-deep"
-      aria-labelledby="close-title"
-    >
+    <footer className="closing screen border-border bg-deep border-t" aria-labelledby="close-title">
       <div className="wrap flex flex-col justify-between gap-16">
         <div className="grid-12 items-start">
           <h2
@@ -112,25 +86,32 @@ export function SiteFooter() {
             </nav>
           </div>
 
-          <div className="text-muted-foreground mt-10 text-sm">
+          <div className="text-muted-foreground mt-10 grid gap-2 text-sm">
             <p>
-              Unofficial fan project, not affiliated with Rare Ltd. or Microsoft. Sea of Thieves is
-              a trademark of its owners. Paintings in the public domain, via Wikimedia Commons:
+              Artwork by{" "}
+              <a
+                href="https://x.com/ArteInFlames"
+                className="link-draw text-foreground"
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                Namaaay (@ArteInFlames)
+              </a>
+              .
             </p>
-            <ul className="flex flex-wrap gap-x-6">
-              {credits.map((c) => (
-                <li key={c.href}>
-                  <a
-                    href={c.href}
-                    className="link-draw inline-flex min-h-11 items-center"
-                    rel="noopener noreferrer"
-                    target="_blank"
-                  >
-                    {c.label}
-                  </a>
-                </li>
-              ))}
-            </ul>
+            <p>
+              Plunderclips is an unofficial fan project, not endorsed by or affiliated with Rare
+              Ltd. or Microsoft. It uses assets from Sea of Thieves under Microsoft&apos;s{" "}
+              <a
+                href="https://www.xbox.com/en-US/developers/rules"
+                className="link-draw"
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                Game Content Usage Rules
+              </a>
+              . Sea of Thieves © Microsoft Corporation.
+            </p>
           </div>
         </div>
       </div>

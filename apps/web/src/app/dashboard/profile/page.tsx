@@ -34,7 +34,7 @@ async function Editor() {
         handle: profile?.handle ?? suggestHandle(session.user.name),
         displayName: profile?.displayName ?? session.user.name.slice(0, 40),
         bio: profile?.bio ?? "",
-        banner: profile?.banner ?? "ninth-wave",
+        banner: profile?.banner ?? "galleon-cove",
         channels,
       }}
     />

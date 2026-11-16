@@ -15,7 +15,7 @@ export {
   type Channel,
   type ChannelPlatform,
 } from "./channels";
-export { BANNERS, isBanner, type Banner } from "./banners";
+export { BANNERS, DEFAULT_BANNER, isBanner, type Banner } from "./banners";
 export {
   getProfileByHandle,
   getProfileByUser,

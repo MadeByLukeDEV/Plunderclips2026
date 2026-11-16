@@ -26,7 +26,7 @@ export const crew = pgTable(
     slug: text().notNull(),
     name: text().notNull(),
     motto: text().notNull().default(""),
-    /** One of the public-domain paintings in BANNERS (creators module). */
+    /** A key from BANNERS (creators module); unknown keys read as DEFAULT_BANNER. */
     banner: text().notNull().default("ninth-wave"),
     joinPolicy: crewJoinPolicy().notNull().default("request"),
     /** Kept in step with crew_member by the social module, inside the same transaction. */

@@ -1,19 +1,21 @@
 import type { StaticImageData } from "next/image";
 import type { Banner } from "@plunderclips/creators";
-import fishermenAtSea from "../../public/art/fishermen-at-sea.jpg";
-import moonlitNight from "../../public/art/moonlit-night.jpg";
-import ninthWave from "../../public/art/ninth-wave.jpg";
-import stormySea from "../../public/art/stormy-sea.jpg";
-import temeraire from "../../public/art/temeraire.jpg";
+import crewAshore from "../../public/art/crew-ashore.jpg";
+import galleonCove from "../../public/art/galleon-cove.jpg";
 
-/** Public-domain paintings by banner key, with alt text describing the scene. */
-export const bannerArt: Record<Banner, { src: StaticImageData; alt: string }> = {
-  "ninth-wave": { src: ninthWave, alt: "Survivors clinging to a mast in a huge sunlit wave" },
-  "fishermen-at-sea": {
-    src: fishermenAtSea,
-    alt: "Two fishing boats riding a moonlit swell, a lantern glowing on deck",
+/** Sea of Thieves artwork by Namaaay (@ArteInFlames), credited in the footer. */
+export const art = {
+  galleonCove: {
+    src: galleonCove,
+    alt: "A pirate holds up a gold coin on a jungle cliff while a galleon waits in the cove below",
   },
-  temeraire: { src: temeraire, alt: "An old warship towed across calm water at sunset" },
-  "stormy-sea": { src: stormySea, alt: "A sailing ship heeling over in a storm" },
-  "moonlit-night": { src: moonlitNight, alt: "A ship under the moon on a dark, calm sea" },
+  crewAshore: {
+    src: crewAshore,
+    alt: "A crowd of pirates cheering on a sunny island beach under palm trees",
+  },
+} as const;
+
+export const bannerArt: Record<Banner, { src: StaticImageData; alt: string }> = {
+  "galleon-cove": art.galleonCove,
+  "crew-ashore": art.crewAshore,
 };

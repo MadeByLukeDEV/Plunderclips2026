@@ -9,7 +9,9 @@ import { DevLogin } from "@/components/auth/dev-login";
 import { SignInButtons } from "@/components/auth/sign-in-buttons";
 import { isProviderKey } from "@/components/auth/providers";
 import { safeNext } from "@/lib/safe-next";
-import art from "../../../public/art/temeraire.jpg";
+import { art as artwork } from "@/lib/art";
+
+const art = artwork.crewAshore.src;
 
 export const metadata: Metadata = {
   title: "Sign in",
@@ -44,7 +46,7 @@ export default function SignInPage({ searchParams }: Props) {
         <div className="relative col-span-12 mt-12 hidden aspect-[4/3] overflow-hidden rounded-2xl md:col-span-6 md:col-start-7 md:mt-0 md:block lg:col-span-7 lg:col-start-6">
           <Image
             src={art}
-            alt="An old warship towed across calm water at sunset"
+            alt={artwork.crewAshore.alt}
             fill
             placeholder="blur"
             sizes="(min-width: 1024px) 55vw, 50vw"
