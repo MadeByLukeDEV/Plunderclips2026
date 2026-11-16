@@ -48,6 +48,8 @@ IP_HASH_SALT=<openssl rand -base64 24>
 # Cloudflare Turnstile (anonymous submissions are refused without it)
 TURNSTILE_SITE_KEY=
 TURNSTILE_SECRET_KEY=
+# optional: extra hosts the widget runs on, comma-separated (default: the host of BETTER_AUTH_URL)
+TURNSTILE_HOSTNAMES=
 
 # Sign-in providers: each one turns on when both values are set
 TWITCH_CLIENT_ID=
@@ -172,6 +174,21 @@ repository variable `SITE_URL` so CI builds with your domain.
   Postgres (at most about a minute's worth). Losing it signs people out and drops those few views;
   nothing else.
 
+## Turnstile
+
+1. Cloudflare dashboard → Turnstile → Add widget. Hostnames: your domain (add `www.` too if it serves the site). Mode: Managed.
+2. Put the site key and secret key in `TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY`. Cloudflare's test keys (`1x000…`) are refused in production on purpose.
+3. The server accepts a token only when Cloudflare says `success`, the action is `submit_clip`, and the hostname is the one in `BETTER_AUTH_URL` (or listed in `TURNSTILE_HOSTNAMES`). Tokens are single-use and expire after 5 minutes.
+4. Check the secret works (run it on your own machine, it sends the secret to Cloudflare only):
+
+   ```bash
+   curl -s https://challenges.cloudflare.com/turnstile/v0/siteverify -d secret=<your secret> -d response=XXXX.DUMMY.TOKEN.XXXX
+   ```
+
+   A working secret answers `"error-codes":["invalid-input-response"]`. `invalid-input-secret` means the secret is wrong.
+
+5. Submit a clip while signed out: the widget shows above the button and the clip lands in the review queue. Rejections are logged as `turnstile rejected`, `turnstile action mismatch` or `turnstile hostname mismatch`.
+
 ## Troubleshooting
 
 | Symptom                                              | Look at                                                                                                             |
@@ -182,4 +199,5 @@ repository variable `SITE_URL` so CI builds with your domain.
 | `/api/health` 503 with `"database":"down"`           | Can the Dokploy server reach the database host and port? Firewall, `pg_hba.conf`.                                   |
 | Sign-in fails with "invalid origin"                  | `BETTER_AUTH_URL` must exactly match the public URL, with `https://` and no trailing slash.                         |
 | Sign-in redirect error at the provider               | The redirect URL registered with the provider doesn't match step 5.                                                 |
-| No bot check on `/submit`, anonymous submits refused | `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` aren't set.                                                         |
+| No bot check on `/submit`, anonymous submits refused | `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` aren't set, or they are Cloudflare's test keys.                     |
+| Anonymous submits fail the bot check                 | Logs: `hostname mismatch` → add the host to `TURNSTILE_HOSTNAMES`; `rejected` → see Cloudflare's error code.        |
