@@ -97,7 +97,7 @@ export function SiteFooter() {
               >
                 Namaaay (@ArteInFlames)
               </a>
-              .
+              , used with permission.
             </p>
             <p>
               Plunderclips is an unofficial fan project, not endorsed by or affiliated with Rare
