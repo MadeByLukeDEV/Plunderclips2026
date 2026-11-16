@@ -8,6 +8,7 @@ const items = [
   { href: "/dashboard", label: "Overview" },
   { href: "/dashboard/clips", label: "Your clips" },
   { href: "/dashboard/profile", label: "Your page" },
+  { href: "/dashboard/crews", label: "Your crews" },
   { href: "/dashboard/accounts", label: "Linked accounts" },
 ];
 
