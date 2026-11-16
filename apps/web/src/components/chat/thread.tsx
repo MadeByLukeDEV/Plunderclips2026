@@ -1,15 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { Loader2, Send, Trash2 } from "lucide-react";
-import type { ChatEvent, ChatMessageWire } from "@plunderclips/social";
+import type { ChatEvent, ChatMessageWire, EmoteSets } from "@plunderclips/social";
 import { Button } from "@plunderclips/ui/components/button";
 import { cn } from "@plunderclips/ui/lib/utils";
 import { deleteAction, markReadAction, sendAction } from "@/app/chat/actions";
 import { olderMessagesAction } from "@/app/chat/history-action";
 import { Avatar } from "@/components/creators/avatar";
 import { ReportButton } from "@/components/report-button";
+import { EmotePicker } from "./emote-picker";
+import { EmoteText } from "./emote-text";
 
 const MAX = 2000;
 const time = new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit" });
@@ -32,12 +34,14 @@ export function Thread({
   initial,
   hasOlder: initialHasOlder,
   reasons,
+  emotes,
 }: {
   channelId: string;
   meId: string;
   initial: ChatMessageWire[];
   hasOlder: boolean;
   reasons: Record<string, string>;
+  emotes: EmoteSets;
 }) {
   const [messages, setMessages] = useState(initial);
   const [hasOlder, setHasOlder] = useState(initialHasOlder);
@@ -49,6 +53,31 @@ export function Thread({
   const list = useRef<HTMLOListElement>(null);
   const stick = useRef(true);
   const lastRead = useRef(0);
+  const draftBox = useRef<HTMLTextAreaElement>(null);
+  const emoteMap = useMemo(
+    () => new Map([...emotes.global, ...emotes.channel].map((e) => [e.code, e])),
+    [emotes],
+  );
+
+  /** Puts an emoji or emote code at the cursor; codes get spaces so they stay separate words. */
+  function insert(text: string) {
+    const el = draftBox.current;
+    const start = el?.selectionStart ?? draft.length;
+    const end = el?.selectionEnd ?? draft.length;
+    const before = draft.slice(0, start);
+    const after = draft.slice(end);
+    const isCode = /^[\p{L}\p{N}_:]/u.test(text) && !/\p{Extended_Pictographic}/u.test(text);
+    const piece = isCode
+      ? `${before && !/\s$/.test(before) ? " " : ""}${text}${after.startsWith(" ") ? "" : " "}`
+      : text;
+    const next = (before + piece + after).slice(0, MAX);
+    setDraft(next);
+    requestAnimationFrame(() => {
+      el?.focus();
+      const pos = Math.min(before.length + piece.length, next.length);
+      el?.setSelectionRange(pos, pos);
+    });
+  }
 
   const lastId = messages.at(-1)?.id ?? 0;
 
@@ -211,7 +240,9 @@ export function Thread({
                       {m.deleted === "staff" ? "Removed by a moderator" : "Message deleted"}
                     </p>
                   ) : (
-                    <p className="text-[15px] break-words whitespace-pre-line">{m.body}</p>
+                    <p className="text-[15px] break-words whitespace-pre-line">
+                      <EmoteText body={m.body} emotes={emoteMap} />
+                    </p>
                   )}
                 </div>
                 {m.deleted ? null : (
@@ -259,6 +290,7 @@ export function Thread({
             </label>
             <div className="flex items-end gap-2">
               <textarea
+                ref={draftBox}
                 id="chat-draft"
                 value={draft}
                 rows={1}
@@ -273,6 +305,7 @@ export function Thread({
                 placeholder="Write a message"
                 className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 dark:bg-input/30 max-h-40 min-h-11 flex-1 resize-none rounded-lg border bg-transparent px-3 py-2.5 text-base outline-none focus-visible:ring-[3px] md:text-sm"
               />
+              <EmotePicker sets={emotes} onPick={insert} />
               <Button type="submit" size="icon" disabled={sending || !draft.trim()}>
                 {sending ? (
                   <Loader2 className="size-5 animate-spin" />

@@ -70,3 +70,13 @@ export {
   type SendResult,
 } from "./chat";
 export { subscribe, type ChatEvent, type ChatMessageWire } from "./chat-bus";
+export {
+  emotesForChannel,
+  globalEmotes,
+  twitchChannelEmotes,
+  parse7tv,
+  parseBttv,
+  type Emote,
+  type EmoteSets,
+  type EmoteProvider,
+} from "./emotes";
