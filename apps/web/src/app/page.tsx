@@ -11,7 +11,7 @@ import { art } from "@/lib/art";
 /*
   Deal (taste skill): kind gaming · palette deep-sea (remapped to seaofthieves.com cues) · type Big Shoulders (display caps) + DM Sans + Geist Mono
   hero film · nav mega · footer dark · close type · rhythm space · buttons solid · mark wordmark
-  moments: word-highlight (statement). Art: Sea of Thieves artwork by Namaaay (@ArteInFlames), used under Microsoft's Game Content Usage Rules.
+  moments: word-highlight (statement). Art: Sea of Thieves artwork by Namaaay (@ArteInFlames) and official Rare screenshots, used under Microsoft's Game Content Usage Rules.
   Layout: fixed header; every section one screen (.screen) with one .wrap on a 12-column grid.
 */
 
@@ -27,25 +27,25 @@ const sections = [
     href: "/clips/weekly",
     title: "This week",
     body: "The top clips of the last seven days, ranked by the crew and refreshed every Monday.",
-    art: art.crewAshore.src,
-    alt: art.crewAshore.alt,
-    position: "object-[50%_30%]",
+    art: art.deckFight.src,
+    alt: art.deckFight.alt,
+    position: "object-[50%_40%]",
   },
   {
     href: "/clips/best-of",
     title: "Best of",
     body: "The clips people still send each other months later. Krakens, sinks and steals.",
-    art: art.galleonCove.src,
-    alt: art.galleonCove.alt,
-    position: "object-[80%_50%]",
+    art: art.krakenSunset.src,
+    alt: art.krakenSunset.alt,
+    position: "object-[50%_55%]",
   },
   {
     href: "/clips/featured",
     title: "Featured",
     body: "Mods pick a handful each week and put the streamer's channel right beside the clip.",
-    art: art.galleonCove.src,
-    alt: art.galleonCove.alt,
-    position: "object-[20%_40%]",
+    art: art.galleonBroadside.src,
+    alt: art.galleonBroadside.alt,
+    position: "object-[55%_45%]",
   },
 ];
 
