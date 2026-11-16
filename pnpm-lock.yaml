@@ -151,6 +151,9 @@ importers:
       '@plunderclips/moderation':
         specifier: workspace:*
         version: link:../../packages/modules/moderation
+      '@plunderclips/notifications':
+        specifier: workspace:*
+        version: link:../../packages/modules/notifications
       '@plunderclips/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -234,6 +237,9 @@ importers:
       '@plunderclips/db':
         specifier: workspace:*
         version: link:../../db
+      '@plunderclips/notifications':
+        specifier: workspace:*
+        version: link:../notifications
       '@plunderclips/shared':
         specifier: workspace:*
         version: link:../../shared
@@ -281,6 +287,21 @@ importers:
       '@plunderclips/identity':
         specifier: workspace:*
         version: link:../identity
+      '@plunderclips/notifications':
+        specifier: workspace:*
+        version: link:../notifications
+      '@plunderclips/shared':
+        specifier: workspace:*
+        version: link:../../shared
+      drizzle-orm:
+        specifier: 0.45.4
+        version: 0.45.4(kysely@0.29.8)(postgres@4.1.1)
+
+  packages/modules/notifications:
+    dependencies:
+      '@plunderclips/db':
+        specifier: workspace:*
+        version: link:../../db
       '@plunderclips/shared':
         specifier: workspace:*
         version: link:../../shared
@@ -299,6 +320,9 @@ importers:
       '@plunderclips/moderation':
         specifier: workspace:*
         version: link:../moderation
+      '@plunderclips/notifications':
+        specifier: workspace:*
+        version: link:../notifications
       '@plunderclips/shared':
         specifier: workspace:*
         version: link:../../shared

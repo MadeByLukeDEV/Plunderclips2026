@@ -59,6 +59,7 @@ export {
   deleteMessage,
   markRead,
   stillInChannel,
+  mentionedHandles,
   toWire,
   MESSAGE_MAX,
   SEND_LIMIT,
