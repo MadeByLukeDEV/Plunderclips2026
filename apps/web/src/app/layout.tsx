@@ -1,20 +1,19 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Geist_Mono, Mona_Sans } from "next/font/google";
+import { Big_Shoulders, DM_Sans, Geist_Mono } from "next/font/google";
 import { MotionProvider } from "@plunderclips/ui/motion/motion-provider";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import "./globals.css";
 
-const fraunces = Fraunces({
+const display = Big_Shoulders({
   subsets: ["latin"],
-  variable: "--font-fraunces",
-  axes: ["SOFT", "opsz"],
+  variable: "--font-big-shoulders",
+  axes: ["opsz"],
   display: "swap",
 });
-const mona = Mona_Sans({
+const dmSans = DM_Sans({
   subsets: ["latin"],
-  variable: "--font-mona",
-  axes: ["wdth"],
+  variable: "--font-dm-sans",
   display: "swap",
 });
 const geistMono = Geist_Mono({
@@ -38,13 +37,13 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image" },
 };
 
-export const viewport: Viewport = { themeColor: "#2b2216", colorScheme: "dark" };
+export const viewport: Viewport = { themeColor: "#10141b", colorScheme: "dark" };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html
       lang="en"
-      className={`${fraunces.variable} ${mona.variable} ${geistMono.variable}`}
+      className={`${display.variable} ${dmSans.variable} ${geistMono.variable}`}
       suppressHydrationWarning
     >
       <head>

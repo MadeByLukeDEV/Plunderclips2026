@@ -12,7 +12,7 @@ export function ClipStatusBadge({ status }: { status: ClipStatus }) {
     <span
       className={cn(
         "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 font-mono text-xs tracking-wide",
-        status === "approved" && "border-primary text-primary",
+        status === "approved" && "border-headline text-headline",
         status === "pending" && "border-border text-muted-foreground",
         status === "rejected" && "border-destructive/60 text-destructive",
       )}

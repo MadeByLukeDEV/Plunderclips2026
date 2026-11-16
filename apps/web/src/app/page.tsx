@@ -13,7 +13,7 @@ import moonlitNight from "../../public/art/moonlit-night.jpg";
 import stormySea from "../../public/art/stormy-sea.jpg";
 
 /*
-  Deal (taste skill): kind gaming · palette walnut-tan · type Mona Sans + Geist Mono (Fraunces added for display)
+  Deal (taste skill): kind gaming · palette deep-sea (remapped to seaofthieves.com cues) · type Big Shoulders (display caps) + DM Sans + Geist Mono
   hero film · nav mega · footer dark · close type · rhythm space · buttons solid · mark wordmark
   moments: word-highlight (statement). Art: public-domain marine paintings stand in for key art.
   Layout: fixed header; every section one screen (.screen) with one .wrap on a 12-column grid.
@@ -117,7 +117,7 @@ export default function HomePage() {
           </h2>
           <ol className="grid-12 mt-10 md:mt-14">
             <li className="border-border bg-card col-span-12 rounded-2xl border p-6 md:col-span-4 md:p-8">
-              <span className="text-primary font-mono text-sm">01</span>
+              <span className="text-headline font-mono text-sm">01</span>
               <h3 className="text-h3 mt-4 font-medium md:mt-6">Paste the link</h3>
               <p className="text-muted-foreground mt-3">
                 Any public clip or video. No sign-up or upload: the URL and a title are enough.
@@ -135,7 +135,7 @@ export default function HomePage() {
               </ul>
             </li>
             <li className="border-border bg-card col-span-12 rounded-2xl border p-6 md:col-span-4 md:p-8">
-              <span className="text-primary font-mono text-sm">02</span>
+              <span className="text-headline font-mono text-sm">02</span>
               <h3 className="text-h3 mt-4 font-medium md:mt-6">A mod gives it a look</h3>
               <p className="text-muted-foreground mt-3">
                 Every anonymous clip goes through the review queue first, which keeps spam and
@@ -143,7 +143,7 @@ export default function HomePage() {
               </p>
             </li>
             <li className="border-border bg-card col-span-12 rounded-2xl border p-6 md:col-span-4 md:p-8">
-              <span className="text-primary font-mono text-sm">03</span>
+              <span className="text-headline font-mono text-sm">03</span>
               <h3 className="text-h3 mt-4 font-medium md:mt-6">It finds its section</h3>
               <p className="text-muted-foreground mt-3">
                 Approved clips go live straight away. Votes push the strongest into This week, and
@@ -254,7 +254,7 @@ export default function HomePage() {
             {signIns.map(([id, name]) => (
               <li
                 key={id}
-                className="flex aspect-[4/3] flex-col justify-between rounded-2xl bg-[#2b2216] p-5 text-[#e4e2da] md:p-6"
+                className="flex aspect-[4/3] flex-col justify-between rounded-2xl bg-[var(--p-bg)] p-5 text-[var(--p-ink)] md:p-6"
               >
                 <PlatformIcon platform={id} className="size-8 md:size-10" />
                 <span className="text-lg font-medium">{name}</span>

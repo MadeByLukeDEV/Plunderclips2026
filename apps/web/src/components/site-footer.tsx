@@ -45,7 +45,7 @@ const listLabel = "font-mono text-xs tracking-wider text-muted-foreground upperc
 export function SiteFooter() {
   return (
     <footer
-      className="closing screen border-border border-t bg-[#1e1810]"
+      className="closing screen border-border border-t bg-deep"
       aria-labelledby="close-title"
     >
       <div className="wrap flex flex-col justify-between gap-16">
@@ -60,7 +60,7 @@ export function SiteFooter() {
             <ul className="text-lead grid gap-4">
               {closeFacts.map((t) => (
                 <li key={t} className="flex gap-3">
-                  <Check className="text-primary mt-1 size-5 shrink-0" />
+                  <Check className="text-headline mt-1 size-5 shrink-0" />
                   {t}
                 </li>
               ))}

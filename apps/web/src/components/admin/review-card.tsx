@@ -124,7 +124,7 @@ export function ReviewCard({ clip, playerSrc, tags, sections, reasons, canFeatur
             Thieves.
           </p>
         ) : clip.isSeaOfThieves ? (
-          <p className="text-primary mt-4 text-sm">{meta.label} lists this as Sea of Thieves.</p>
+          <p className="text-headline mt-4 text-sm">{meta.label} lists this as Sea of Thieves.</p>
         ) : null}
 
         <div className="border-border mt-4 grid gap-1 border-t pt-4 text-sm">
@@ -196,7 +196,7 @@ export function ReviewCard({ clip, playerSrc, tags, sections, reasons, canFeatur
                 {Object.entries(tags).map(([slug, label]) => (
                   <label
                     key={slug}
-                    className="border-border has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-primary-foreground has-[:focus-visible]:ring-ring/50 inline-flex min-h-11 cursor-pointer items-center rounded-full border px-3.5 text-sm transition-colors has-[:focus-visible]:ring-[3px]"
+                    className="border-border has-[:checked]:border-headline has-[:checked]:bg-primary has-[:checked]:text-primary-foreground has-[:focus-visible]:ring-ring/50 inline-flex min-h-11 cursor-pointer items-center rounded-full border px-3.5 text-sm transition-colors has-[:focus-visible]:ring-[3px]"
                   >
                     <input
                       type="checkbox"

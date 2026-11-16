@@ -70,7 +70,7 @@ async function Content({ params }: Props) {
                   <li key={s.slug}>
                     <Link
                       href={`/clips/${s.slug}`}
-                      className="border-primary text-primary inline-flex min-h-8 items-center rounded-full border px-3 font-mono text-xs tracking-wider uppercase"
+                      className="border-headline text-headline inline-flex min-h-8 items-center rounded-full border px-3 font-mono text-xs tracking-wider uppercase"
                     >
                       {s.title}
                     </Link>
