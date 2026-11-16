@@ -11,7 +11,7 @@ A Sea of Thieves clip community where streamers promote their content and connec
 ## Architecture (modular monolith)
 
 - `apps/web`: Next.js App Router (cacheComponents on, standalone output).
-- `packages/modules/<name>`: domain modules (`identity`, `clips`, `creators`, `moderation`, `social`). **Import only from a module's public entry** (`@plunderclips/clips`), never from `src/` internals. ESLint enforces this.
+- `packages/modules/<name>`: domain modules (`identity`, `clips`, `creators`, `moderation`, `social`, `notifications`). `notifications` depends only on db and shared, so any module can notify (insert inside the transaction, `announce()` after it commits). **Import only from a module's public entry** (`@plunderclips/clips`), never from `src/` internals. ESLint enforces this.
 - `packages/db`: Drizzle client + schema barrel. Each module's tables live in `src/schema/<module>.ts`.
 - `packages/shared`: lazy env validation (`env()`), Redis client, logger.
 - `packages/ui`: shadcn components, ReactBits pieces, `cn`.

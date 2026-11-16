@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@plunderclips/db": "workspace:*",
+    "@plunderclips/notifications": "workspace:*",
     "@plunderclips/shared": "workspace:*",
     "drizzle-orm": "0.45.4"
   },

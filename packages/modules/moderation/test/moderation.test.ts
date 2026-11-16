@@ -13,7 +13,7 @@ describe.skipIf(!ready)("moderation (Postgres)", async () => {
   });
   const { db, schema } = await import("@plunderclips/db");
   const { redis } = await import("@plunderclips/shared");
-  const { and, eq, inArray, like } = await import("drizzle-orm");
+  const { and, desc, eq, inArray, like } = await import("drizzle-orm");
   const { isoWeek } = await import("@plunderclips/clips");
   const m = await import("../src/index");
 
@@ -143,6 +143,18 @@ describe.skipIf(!ready)("moderation (Postgres)", async () => {
         tags: ["kraken", "pvp"],
       });
       expect(row.approvedAt).toBeInstanceOf(Date);
+      // The member who sent it in gets a notification, without the mod's name on it.
+      const [note] = await db()
+        .select()
+        .from(schema.notification)
+        .where(eq(schema.notification.userId, uid("member")))
+        .orderBy(desc(schema.notification.id))
+        .limit(1);
+      expect(note).toMatchObject({
+        kind: "clip_approved",
+        actorId: null,
+        data: { clipId: id, title: "approve-me" },
+      });
       const picks = await db()
         .select()
         .from(schema.clipSection)

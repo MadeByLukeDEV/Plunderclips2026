@@ -8,6 +8,7 @@ import {
   type HandleError,
 } from "@plunderclips/creators";
 import { audit, isStaff, type Actor } from "@plunderclips/moderation";
+import { notify } from "@plunderclips/notifications";
 import { parseSevenTvSetRef, sevenTvSetExists } from "./emotes";
 
 const { crew, crewMember, crewRequest, creatorProfile, user } = schema;
@@ -348,16 +349,18 @@ export async function updateCrew(
   if (s.kind !== "member" || s.role !== "captain") return { ok: false, error: "forbidden" };
   const [before] = await db().select({ slug: crew.slug }).from(crew).where(eq(crew.id, crewId));
   if (!before) return { ok: false, error: "not_found" };
+  let admitted: string[] = [];
   try {
-    await db().transaction(async (tx) => {
+    admitted = await db().transaction(async (tx) => {
       await tx.update(crew).set(c.value).where(eq(crew.id, crewId));
       // Opening the doors lets everyone who was waiting in, as far as there's room.
-      if (c.value.joinPolicy === "open") await admitWaiting(tx, crewId);
+      return c.value.joinPolicy === "open" ? admitWaiting(tx, crewId) : [];
     });
   } catch (err) {
     if (isUniqueViolation(err)) return { ok: false, errors: [{ field: "slug", error: "taken" }] };
     throw err;
   }
+  await notifyAccepted(crewId, admitted, actorId);
   const [row] = await db().select(crewColumns).from(crew).where(eq(crew.id, crewId));
   return {
     ok: true,
@@ -378,9 +381,10 @@ async function lockCrew(tx: Tx, crewId: string) {
   return row ?? null;
 }
 
-async function admitWaiting(tx: Tx, crewId: string) {
+async function admitWaiting(tx: Tx, crewId: string): Promise<string[]> {
+  const admitted: string[] = [];
   const locked = await lockCrew(tx, crewId);
-  if (!locked) return;
+  if (!locked) return admitted;
   let room = CREW_SIZE_MAX - locked.memberCount;
   const waiting = await tx
     .select({ userId: crewRequest.userId })
@@ -398,8 +402,10 @@ async function admitWaiting(tx: Tx, crewId: string) {
     await tx
       .delete(crewRequest)
       .where(and(eq(crewRequest.crewId, crewId), eq(crewRequest.userId, w.userId)));
+    admitted.push(w.userId);
     room--;
   }
+  return admitted;
 }
 
 // --- Joining and leaving -----------------------------------------------------------
@@ -411,7 +417,7 @@ export type JoinResult =
 export async function joinCrew(userId: string, crewId: string, message = ""): Promise<JoinResult> {
   if (!(await hasProfile(userId))) return { ok: false, error: "no_profile" };
   const note = message.replace(/\s+/g, " ").trim().slice(0, REQUEST_MESSAGE_MAX);
-  return db().transaction(async (tx) => {
+  const result = await db().transaction(async (tx) => {
     const locked = await lockCrew(tx, crewId);
     if (!locked) return { ok: false, error: "not_found" } as const;
     const [member] = await tx
@@ -441,6 +447,49 @@ export async function joinCrew(userId: string, crewId: string, message = ""): Pr
     if (!inserted.length) return { ok: false, error: "already_requested" } as const;
     return { ok: true, status: "requested" } as const;
   });
+  if (result.ok && result.status === "requested") await notifyOfficers(crewId, userId);
+  return result;
+}
+
+/** The captain and officers hear about a new request to join. */
+async function notifyOfficers(crewId: string, requesterId: string) {
+  const [info] = await db()
+    .select({ slug: crew.slug, name: crew.name, who: creatorProfile.displayName })
+    .from(crew)
+    .innerJoin(creatorProfile, eq(creatorProfile.userId, requesterId))
+    .where(eq(crew.id, crewId));
+  if (!info) return;
+  const officers = await db()
+    .select({ userId: crewMember.userId })
+    .from(crewMember)
+    .where(and(eq(crewMember.crewId, crewId), sql`${crewMember.role} in ('captain', 'officer')`));
+  await notify(
+    officers.map((o) => ({
+      userId: o.userId,
+      kind: "crew_request" as const,
+      actorId: requesterId,
+      data: { slug: info.slug, crew: info.name, name: info.who },
+      dedupeKey: `crew_request:${crewId}:${requesterId}`,
+    })),
+  );
+}
+
+/** New members who were let in hear about it. */
+async function notifyAccepted(crewId: string, userIds: string[], actorId: string | null) {
+  if (!userIds.length) return;
+  const [info] = await db()
+    .select({ slug: crew.slug, name: crew.name })
+    .from(crew)
+    .where(eq(crew.id, crewId));
+  if (!info) return;
+  await notify(
+    userIds.map((userId) => ({
+      userId,
+      kind: "crew_accepted" as const,
+      actorId,
+      data: { slug: info.slug, crew: info.name },
+    })),
+  );
 }
 
 export async function cancelRequest(userId: string, crewId: string): Promise<void> {
@@ -460,7 +509,7 @@ export async function answerRequest(
 ): Promise<ActionResult> {
   const s = await standing(crewId, actorId);
   if (s.kind !== "member" || s.role === "deckhand") return { ok: false, error: "forbidden" };
-  return db().transaction(async (tx) => {
+  const result = await db().transaction(async (tx) => {
     const locked = await lockCrew(tx, crewId);
     if (!locked) return { ok: false, error: "not_found" } as const;
     const removed = await tx
@@ -480,8 +529,11 @@ export async function answerRequest(
       .where(eq(crewMember.userId, userId))) as [{ n: number }];
     if (n >= CREWS_PER_MEMBER_MAX) return { ok: false, error: "crew_limit" } as const;
     await tx.insert(crewMember).values({ crewId, userId }).onConflictDoNothing();
-    return { ok: true } as const;
+    return { ok: true, joined: true } as const;
   });
+  if (!result.ok) return result;
+  if ("joined" in result) await notifyAccepted(crewId, [userId], actorId);
+  return { ok: true };
 }
 
 /**

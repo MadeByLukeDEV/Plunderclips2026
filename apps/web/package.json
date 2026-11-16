@@ -17,6 +17,7 @@
     "@plunderclips/db": "workspace:*",
     "@plunderclips/identity": "workspace:*",
     "@plunderclips/moderation": "workspace:*",
+    "@plunderclips/notifications": "workspace:*",
     "@plunderclips/shared": "workspace:*",
     "@plunderclips/social": "workspace:*",
     "@plunderclips/ui": "workspace:*",

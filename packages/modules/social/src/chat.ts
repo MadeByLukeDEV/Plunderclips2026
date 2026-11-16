@@ -1,6 +1,7 @@
 import { and, desc, eq, gt, inArray, isNull, lt, ne, sql } from "drizzle-orm";
 import { db, schema } from "@plunderclips/db";
 import { audit, isStaff, type Actor } from "@plunderclips/moderation";
+import { notify } from "@plunderclips/notifications";
 import { slidingWindow } from "@plunderclips/shared";
 import { publish, type ChatMessageWire } from "./chat-bus";
 
@@ -375,7 +376,8 @@ export async function sendMessage(
   if (body.length > MESSAGE_MAX) return { ok: false, error: "too_long" };
   const [me] = await db().select({ banned: user.banned }).from(user).where(eq(user.id, userId));
   if (!me || me.banned) return { ok: false, error: "banned" };
-  if (!(await channelFor(channelId, userId))) return { ok: false, error: "forbidden" };
+  const channel = await channelFor(channelId, userId);
+  if (!channel) return { ok: false, error: "forbidden" };
   const limited = await slidingWindow(
     `chat:send:${userId}`,
     SEND_LIMIT.limit,
@@ -397,7 +399,50 @@ export async function sendMessage(
   });
   const message = (await getMessage(id))!;
   await publish(channelId, { type: "message", message: toWire(message) });
+  await notifyMentions(message, channel);
   return { ok: true, message };
+}
+
+const MENTION = /(?:^|[^\p{L}\p{N}_@])@([a-z0-9][a-z0-9_-]{2,23})/giu;
+
+/** Handles mentioned as @handle, lowercased, at most 10. */
+export function mentionedHandles(body: string): string[] {
+  const found = new Set<string>();
+  for (const m of body.matchAll(MENTION)) {
+    found.add(m[1]!.toLowerCase().replace(/[-_]+$/, ""));
+    if (found.size >= 10) break;
+  }
+  return [...found];
+}
+
+/** People @mentioned who can read the channel get a notification linking to the message. */
+async function notifyMentions(message: ChatMessage, channel: ChannelInfo) {
+  const handles = mentionedHandles(message.body);
+  if (!handles.length) return;
+  const people = await db()
+    .select({ userId: creatorProfile.userId })
+    .from(creatorProfile)
+    .where(inArray(creatorProfile.handle, handles));
+  const inside = (
+    await Promise.all(
+      people.map(async (p) => ((await stillInChannel(channel.id, p.userId)) ? p.userId : null)),
+    )
+  ).filter((u): u is string => !!u && u !== message.authorId);
+  await notify(
+    inside.map((userId) => ({
+      userId,
+      kind: "mention" as const,
+      actorId: message.authorId,
+      data: {
+        channelId: channel.id,
+        messageId: String(message.id),
+        where: channel.kind === "crew" ? channel.title : "a direct message",
+        name: message.displayName,
+        excerpt: message.body.slice(0, 140),
+      },
+      dedupeKey: `mention:${message.id}`,
+    })),
+  );
 }
 
 export async function getMessage(id: number): Promise<ChatMessage | null> {

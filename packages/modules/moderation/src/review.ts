@@ -1,5 +1,6 @@
 import { and, asc, count, desc, eq, inArray, lt, ne, or, sql } from "drizzle-orm";
 import { db, schema } from "@plunderclips/db";
+import { announce, insertNotifications } from "@plunderclips/notifications";
 import { isClipTag, isoWeek, type ClipTag } from "@plunderclips/clips";
 import { assertCan, type Actor } from "./actor";
 import { audit } from "./audit";
@@ -218,9 +219,14 @@ export async function reviewClip(
       return { ok: false, error: "bad_input" };
   }
 
-  return db().transaction(async (tx) => {
+  const result = await db().transaction(async (tx) => {
     const [current] = await tx
-      .select({ status: clip.status, tags: clip.tags })
+      .select({
+        status: clip.status,
+        tags: clip.tags,
+        title: clip.title,
+        submittedBy: clip.submittedByUserId,
+      })
       .from(clip)
       .where(eq(clip.id, clipId))
       .for("update");
@@ -289,8 +295,32 @@ export async function reviewClip(
       },
       tx,
     );
-    return { ok: true as const, status: next };
+
+    // The member who sent the clip in hears how it went (anonymous submissions have nobody).
+    // No actor: members don't learn which mod reviewed them.
+    let notified: string[] = [];
+    if (current.submittedBy && (input.decision === "approve" || input.decision === "reject"))
+      notified = await insertNotifications(
+        [
+          input.decision === "approve"
+            ? {
+                userId: current.submittedBy,
+                kind: "clip_approved",
+                data: { clipId, title: current.title },
+              }
+            : {
+                userId: current.submittedBy,
+                kind: "clip_rejected",
+                data: { clipId, title: current.title, reason: reason ?? "" },
+              },
+        ],
+        tx,
+      );
+    return { ok: true as const, status: next, notified };
   });
+  if (!result.ok) return result;
+  await announce(result.notified);
+  return { ok: true, status: result.status };
 }
 
 // --- Section curation ------------------------------------------------------------------

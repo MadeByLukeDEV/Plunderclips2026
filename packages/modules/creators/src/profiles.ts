@@ -1,5 +1,6 @@
 import { and, asc, desc, eq, inArray, ne, or, sql } from "drizzle-orm";
 import { db, schema } from "@plunderclips/db";
+import { notify } from "@plunderclips/notifications";
 import { BANNERS, DEFAULT_BANNER, isBanner, type Banner } from "./banners";
 import { CHANNEL_PLATFORMS, parseChannel, type Channel, type ChannelPlatform } from "./channels";
 import { checkHandle, type HandleError } from "./handle";
@@ -216,8 +217,33 @@ export async function setFollow(
     .limit(1);
   if (!exists) return { ok: false, error: "not_found" };
 
-  if (on) await db().insert(creatorFollow).values({ followerId, creatorId }).onConflictDoNothing();
-  else
+  if (on) {
+    const added = await db()
+      .insert(creatorFollow)
+      .values({ followerId, creatorId })
+      .onConflictDoNothing()
+      .returning({ c: creatorFollow.creatorId });
+    if (added.length) {
+      const [who] = await db()
+        .select({
+          name: user.name,
+          display: creatorProfile.displayName,
+          handle: creatorProfile.handle,
+        })
+        .from(user)
+        .leftJoin(creatorProfile, eq(creatorProfile.userId, user.id))
+        .where(eq(user.id, followerId));
+      await notify([
+        {
+          userId: creatorId,
+          kind: "new_follower",
+          actorId: followerId,
+          data: { handle: who?.handle ?? "", name: who?.display ?? who?.name ?? "Someone" },
+          dedupeKey: `follow:${followerId}`,
+        },
+      ]);
+    }
+  } else
     await db()
       .delete(creatorFollow)
       .where(and(eq(creatorFollow.followerId, followerId), eq(creatorFollow.creatorId, creatorId)));

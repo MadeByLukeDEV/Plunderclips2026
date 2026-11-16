@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@plunderclips/ui/components/button";
 import { authClient } from "@plunderclips/identity/client";
+import { NotificationBell } from "@/components/notifications/bell";
 
 /** Header account control: "Sign in" when signed out, avatar + dashboard link and sign-out when signed in. */
 export function AccountButton({
@@ -55,6 +56,7 @@ export function AccountButton({
           Dashboard
         </Link>
       </Button>
+      <NotificationBell stacked={stacked} onNavigate={onNavigate} />
       <Button variant="ghost" size={stacked ? "lg" : "default"} asChild>
         <Link href="/chat" onClick={onNavigate}>
           Chat
