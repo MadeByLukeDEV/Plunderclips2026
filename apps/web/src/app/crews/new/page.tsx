@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getProfileByUser, suggestHandle } from "@plunderclips/creators";
 import { Button } from "@plunderclips/ui/components/button";
+import { mediaEnabled } from "@plunderclips/media";
 import { CrewForm } from "@/components/crews/crew-form";
 import { requireSession } from "@/lib/auth-guard";
 
@@ -46,6 +47,7 @@ async function Form() {
     );
   return (
     <CrewForm
+      uploads={mediaEnabled()}
       initial={{
         slug: suggestHandle(`${profile.displayName} crew`),
         name: "",

@@ -28,6 +28,8 @@ import {
 export type CrewFormState =
   | { status: "idle" }
   | { status: "saved"; slug: string }
+  /** Founded: the form uploads any picked images, then opens the crew page. */
+  | { status: "created"; slug: string; crewId: string }
   | { status: "error"; errors: Record<string, string>; form?: string };
 
 /** null: done. A string: what to tell the member. */
@@ -115,7 +117,7 @@ export async function createCrewAction(_p: CrewFormState, form: FormData): Promi
     };
   }
   expire(r.crew.slug);
-  redirect(`/crews/${r.crew.slug}`);
+  return { status: "created", slug: r.crew.slug, crewId: r.crew.id };
 }
 
 export async function updateCrewAction(

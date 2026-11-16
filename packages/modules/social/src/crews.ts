@@ -1,5 +1,6 @@
 import { and, asc, desc, eq, or, sql } from "drizzle-orm";
 import { db, schema } from "@plunderclips/db";
+import { logger } from "@plunderclips/shared";
 import {
   checkHandle,
   DEFAULT_BANNER,
@@ -710,7 +711,8 @@ export async function setCrewImage(
   const key = newKey(kind === "banner" ? "banners" : "logos", "crew", crewId);
   try {
     await storage().put(key, image.data, "image/webp");
-  } catch {
+  } catch (err) {
+    logger.warn("crew image upload failed", { key, error: String(err) });
     return { ok: false, error: "storage" };
   }
   await db()
