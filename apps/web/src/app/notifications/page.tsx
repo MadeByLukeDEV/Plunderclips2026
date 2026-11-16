@@ -4,10 +4,10 @@ import Link from "next/link";
 import { listNotifications } from "@plunderclips/notifications";
 import { Button } from "@plunderclips/ui/components/button";
 import { cn } from "@plunderclips/ui/lib/utils";
+import { LocalTime } from "@/components/local-time";
 import { MarkAllRead } from "@/components/notifications/mark-all-read";
 import { toView } from "@/components/notifications/describe";
 import { requireSession } from "@/lib/auth-guard";
-import { LocalTime } from "@/components/local-time";
 
 export const metadata: Metadata = { title: "Notifications", robots: { index: false } };
 
@@ -70,6 +70,11 @@ async function List({ searchParams }: Props) {
                   {n.text}
                   {n.read ? null : <span className="sr-only"> (unread)</span>}
                 </span>
+                {n.startsAt ? (
+                  <span className="text-muted-foreground mt-1 block text-sm">
+                    <LocalTime value={n.startsAt} format="datetime" />
+                  </span>
+                ) : null}
                 {n.detail ? (
                   <span className="text-muted-foreground mt-1 block text-sm">{n.detail}</span>
                 ) : null}

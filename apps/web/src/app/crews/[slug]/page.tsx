@@ -23,6 +23,8 @@ import {
   RequestButtons,
 } from "@/components/crews/crew-buttons";
 import { StaffRemoveImage } from "@/components/media/staff-remove-image";
+import { CrewTabs } from "@/components/collab/crew-tabs";
+import { LocalTime } from "@/components/local-time";
 import { bannerImage } from "@/lib/art";
 import { crewPage } from "@/lib/crews-data";
 
@@ -60,7 +62,7 @@ async function Content({ params }: Props) {
   const { slug } = await params;
   const data = await crewPage(slug);
   if (!data) notFound();
-  const { crew, members } = data;
+  const { crew, members, sessions } = data;
   const art = bannerImage(crew, crew.bannerUrl ? `${crew.name} banner` : undefined);
   const groups = (["captain", "officer", "deckhand"] as const)
     .map((role) => [role, members.filter((m) => m.role === role)] as const)
@@ -112,6 +114,35 @@ async function Content({ params }: Props) {
           </div>
         </div>
       </section>
+
+      <Suspense fallback={null}>
+        <MemberTabs crew={crew} />
+      </Suspense>
+
+      {sessions.length ? (
+        <section aria-labelledby="crew-sessions" className="pb-12">
+          <div className="wrap">
+            <h2 id="crew-sessions" className="text-h3 font-medium">
+              Next sessions
+            </h2>
+            <ul className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {sessions.map((s) => (
+                <li key={s.id} className="bg-card border-border rounded-xl border p-4">
+                  <p className="text-muted-foreground font-mono text-xs">
+                    <LocalTime value={s.startsAt.toISOString()} format="datetime" />
+                  </p>
+                  <p className="mt-1 font-medium">{s.title}</p>
+                  {s.going.length ? (
+                    <p className="text-muted-foreground mt-1 text-sm">
+                      {s.going.length} going: {s.going.map((g) => g.name).join(", ")}
+                    </p>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      ) : null}
 
       <Suspense fallback={null}>
         <Manage crew={crew} members={members} />
@@ -187,6 +218,20 @@ async function Viewer({ crew }: { crew: Crew }) {
       ) : (
         <JoinControls slug={crew.slug} policy={crew.joinPolicy} standing={kind} />
       )}
+    </div>
+  );
+}
+
+/** Members get links to the crew's board, calendar and chat. */
+async function MemberTabs({ crew }: { crew: Crew }) {
+  await connection();
+  const session = await getSession(await headers());
+  if (!session) return null;
+  const s = await standing(crew.id, session.user.id);
+  if (s.kind !== "member") return null;
+  return (
+    <div className="wrap -mt-4 pb-10">
+      <CrewTabs slug={crew.slug} current="crew" />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   bigint,
+  boolean,
   check,
   index,
   integer,
@@ -12,6 +13,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { creatorProfile } from "./creators";
+import { user } from "./identity";
 
 export const crewJoinPolicy = pgEnum("crew_join_policy", ["open", "request"]);
 export const crewRole = pgEnum("crew_role", ["captain", "officer", "deckhand"]);
@@ -172,4 +174,102 @@ export const chatRead = pgTable(
     lastReadId: bigint({ mode: "number" }).notNull().default(0),
   },
   (t) => [primaryKey({ columns: [t.channelId, t.userId] })],
+);
+
+// --- Collab: crew board, sessions, looking-for-crew ----------------------------------
+
+export const boardStatus = pgEnum("board_status", ["idea", "planned", "done"]);
+
+/** Ideas and plans on a crew's private board. */
+export const crewBoardItem = pgTable(
+  "crew_board_item",
+  {
+    id: text()
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    crewId: text()
+      .notNull()
+      .references(() => crew.id, { onDelete: "cascade" }),
+    authorId: text().references(() => user.id, { onDelete: "set null" }),
+    title: text().notNull(),
+    notes: text().notNull().default(""),
+    status: boardStatus().notNull().default("idea"),
+    createdAt: timestamp().defaultNow().notNull(),
+    updatedAt: timestamp()
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (t) => [index("crew_board_crew_idx").on(t.crewId, t.status)],
+);
+
+/** A scheduled crew session (a stream, a collab, a voyage). Times are UTC. */
+export const crewSession = pgTable(
+  "crew_session",
+  {
+    id: text()
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    crewId: text()
+      .notNull()
+      .references(() => crew.id, { onDelete: "cascade" }),
+    createdBy: text().references(() => user.id, { onDelete: "set null" }),
+    title: text().notNull(),
+    notes: text().notNull().default(""),
+    startsAt: timestamp({ withTimezone: true }).notNull(),
+    durationMin: integer().notNull().default(120),
+    /** Public sessions show on the crew page for everyone. */
+    isPublic: boolean().notNull().default(false),
+    createdAt: timestamp().defaultNow().notNull(),
+  },
+  (t) => [index("crew_session_crew_idx").on(t.crewId, t.startsAt)],
+);
+
+export const rsvpStatus = pgEnum("rsvp_status", ["going", "maybe"]);
+
+export const crewSessionRsvp = pgTable(
+  "crew_session_rsvp",
+  {
+    sessionId: text()
+      .notNull()
+      .references(() => crewSession.id, { onDelete: "cascade" }),
+    userId: text()
+      .notNull()
+      .references(() => creatorProfile.userId, { onDelete: "cascade" }),
+    status: rsvpStatus().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.sessionId, t.userId] })],
+);
+
+export const lfcRegion = pgEnum("lfc_region", ["eu", "na", "sa", "oce", "asia", "any"]);
+export const lfcPlatform = pgEnum("lfc_platform", ["pc", "xbox", "playstation", "any"]);
+export const lfcShip = pgEnum("lfc_ship", ["sloop", "brigantine", "galleon", "any"]);
+
+/** Public "looking for crew" posts: a creator looking for a crew, or a crew recruiting. */
+export const lfcPost = pgTable(
+  "lfc_post",
+  {
+    id: text()
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    authorId: text()
+      .notNull()
+      .references(() => creatorProfile.userId, { onDelete: "cascade" }),
+    /** Set when a captain or officer posts for their crew ("recruiting"). */
+    crewId: text().references(() => crew.id, { onDelete: "cascade" }),
+    title: text().notNull(),
+    body: text().notNull().default(""),
+    region: lfcRegion().notNull().default("any"),
+    platform: lfcPlatform().notNull().default("any"),
+    ship: lfcShip().notNull().default("any"),
+    styles: text().array().notNull().default(sql`'{}'::text[]`),
+    /** Free text: "weekday evenings CET". */
+    availability: text().notNull().default(""),
+    createdAt: timestamp().defaultNow().notNull(),
+    expiresAt: timestamp().notNull(),
+  },
+  (t) => [
+    index("lfc_post_expires_idx").on(t.expiresAt),
+    index("lfc_post_author_idx").on(t.authorId),
+  ],
 );

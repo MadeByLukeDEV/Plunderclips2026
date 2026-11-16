@@ -5,7 +5,13 @@ import { logger, redis } from "@plunderclips/shared";
 const { notification, user, creatorProfile } = schema;
 
 export type NotificationKind =
-  "clip_approved" | "clip_rejected" | "new_follower" | "crew_request" | "crew_accepted" | "mention";
+  | "clip_approved"
+  | "clip_rejected"
+  | "new_follower"
+  | "crew_request"
+  | "crew_accepted"
+  | "mention"
+  | "session_scheduled";
 
 /**
  * What each kind carries. Snapshot values (titles, names) so a notification reads on its own even
@@ -18,6 +24,7 @@ export type NotificationData = {
   crew_request: { slug: string; crew: string; name: string };
   crew_accepted: { slug: string; crew: string };
   mention: { channelId: string; messageId: string; where: string; name: string; excerpt: string };
+  session_scheduled: { slug: string; crew: string; sessionId: string; title: string; startsAt: string };
 };
 
 export type NewNotification<K extends NotificationKind = NotificationKind> = {

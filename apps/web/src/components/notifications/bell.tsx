@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Bell } from "lucide-react";
 import { cn } from "@plunderclips/ui/lib/utils";
 import { latestNotificationsAction, markReadAction } from "@/app/notifications/actions";
+import { LocalTime } from "@/components/local-time";
 import type { NotificationView } from "./describe";
 
 const ago = (iso: string) => {
@@ -138,6 +139,11 @@ export function NotificationBell({
                     />
                     <span className="min-w-0 flex-1">
                       <span className="block text-sm">{n.text}</span>
+                      {n.startsAt ? (
+                        <span className="text-muted-foreground mt-0.5 block text-sm">
+                          <LocalTime value={n.startsAt} format="datetime" />
+                        </span>
+                      ) : null}
                       {n.detail ? (
                         <span className="text-muted-foreground mt-0.5 line-clamp-2 block text-sm">
                           {n.detail}
