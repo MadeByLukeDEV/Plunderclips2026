@@ -50,7 +50,7 @@ async function Form() {
         slug: suggestHandle(`${profile.displayName} crew`),
         name: "",
         motto: "",
-        banner: "ninth-wave",
+        banner: "galleon-cove",
         joinPolicy: "request",
       }}
     />

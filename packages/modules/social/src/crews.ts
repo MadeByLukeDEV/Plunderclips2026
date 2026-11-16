@@ -1,6 +1,12 @@
 import { and, asc, desc, eq, or, sql } from "drizzle-orm";
 import { db, schema } from "@plunderclips/db";
-import { checkHandle, isBanner, type Banner, type HandleError } from "@plunderclips/creators";
+import {
+  checkHandle,
+  DEFAULT_BANNER,
+  isBanner,
+  type Banner,
+  type HandleError,
+} from "@plunderclips/creators";
 import { audit, isStaff, type Actor } from "@plunderclips/moderation";
 
 const { crew, crewMember, crewRequest, creatorProfile, user } = schema;
@@ -62,7 +68,7 @@ const crewColumns = {
 
 const toCrew = <T extends { banner: string }>(r: T): Omit<T, "banner"> & { banner: Banner } => ({
   ...r,
-  banner: isBanner(r.banner) ? r.banner : "ninth-wave",
+  banner: isBanner(r.banner) ? r.banner : DEFAULT_BANNER,
 });
 
 /** Banned members drop off crew pages (banned is null for most users). */
@@ -232,7 +238,7 @@ function clean(
   else if (name.length > CREW_NAME_MAX) errors.push({ field: "name", error: "too_long" });
   const motto = (input.motto ?? "").replace(/\s+/g, " ").trim();
   if (motto.length > CREW_MOTTO_MAX) errors.push({ field: "motto", error: "too_long" });
-  const banner = input.banner ?? "ninth-wave";
+  const banner = input.banner ?? DEFAULT_BANNER;
   if (!isBanner(banner)) errors.push({ field: "banner", error: "invalid" });
   const joinPolicy = input.joinPolicy ?? "request";
   if (!(JOIN_POLICIES as readonly string[]).includes(joinPolicy))

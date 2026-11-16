@@ -50,7 +50,7 @@ describe.skipIf(!url)("creator profiles (Postgres)", async () => {
       handle: h("alice"),
       displayName: "  Alice   the Bold ",
       bio: "Line one\r\n\r\n\r\n\r\nLine two",
-      banner: "temeraire",
+      banner: "crew-ashore",
       channels: { twitch: "https://www.twitch.tv/AliceSails", x: "@AliceSails", kick: "" },
     });
     expect(r.ok).toBe(true);
@@ -60,7 +60,7 @@ describe.skipIf(!url)("creator profiles (Postgres)", async () => {
       handle: h("alice"),
       displayName: "Alice the Bold",
       bio: "Line one\n\nLine two",
-      banner: "temeraire",
+      banner: "crew-ashore",
       followerCount: 0,
       channels: [
         { platform: "twitch", handle: "alicesails" },

@@ -67,7 +67,7 @@ function fieldMessage(e: CrewFieldError): string {
     case "motto":
       return `Keep it to ${CREW_MOTTO_MAX} characters.`;
     case "banner":
-      return "Pick one of the paintings.";
+      return "Pick one of the banners.";
     case "joinPolicy":
       return "Choose how people join.";
   }

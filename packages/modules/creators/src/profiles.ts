@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, inArray, ne, or, sql } from "drizzle-orm";
 import { db, schema } from "@plunderclips/db";
-import { BANNERS, isBanner, type Banner } from "./banners";
+import { BANNERS, DEFAULT_BANNER, isBanner, type Banner } from "./banners";
 import { CHANNEL_PLATFORMS, parseChannel, type Channel, type ChannelPlatform } from "./channels";
 import { checkHandle, type HandleError } from "./handle";
 
@@ -48,7 +48,7 @@ async function withChannels<T extends { userId: string; banner: string }>(
   const order = (p: string) => CHANNEL_PLATFORMS.indexOf(p as ChannelPlatform);
   return rows.map((r) => ({
     ...r,
-    banner: isBanner(r.banner) ? r.banner : "ninth-wave",
+    banner: isBanner(r.banner) ? r.banner : DEFAULT_BANNER,
     channels: channels
       .filter(
         (c) =>
@@ -143,7 +143,7 @@ export async function saveProfile(userId: string, input: ProfileInput): Promise<
     .trim();
   if (bio.length > BIO_MAX) errors.push({ field: "bio", error: "too_long" });
 
-  const banner = input.banner ?? "ninth-wave";
+  const banner = input.banner ?? DEFAULT_BANNER;
   if (!isBanner(banner)) errors.push({ field: "banner", error: "invalid" });
 
   const channels: Channel[] = [];

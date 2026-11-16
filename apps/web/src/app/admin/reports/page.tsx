@@ -13,8 +13,8 @@ export default function ReportsPage() {
     <div>
       <h1 className="text-h2">Reports</h1>
       <p className="text-muted-foreground mt-3 max-w-[60ch]">
-        Open reports, grouped by what they&apos;re about, most-reported first. Closing a group closes
-        every report in it.
+        Open reports, grouped by what they&apos;re about, most-reported first. Closing a group
+        closes every report in it.
       </p>
       <Suspense fallback={<div className="bg-card mt-8 h-72 animate-pulse rounded-2xl" />}>
         <Reports />

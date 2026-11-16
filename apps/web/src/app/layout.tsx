@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   },
   description:
     "Share Sea of Thieves clips from Twitch, YouTube and Kick without an account. Weekly picks, best-of reels and streamers to sail with.",
-  openGraph: { type: "website", siteName: "Plunderclips", images: ["/art/fishermen-at-sea.jpg"] },
+  openGraph: { type: "website", siteName: "Plunderclips", images: ["/art/galleon-cove.jpg"] },
   twitter: { card: "summary_large_image" },
 };
 

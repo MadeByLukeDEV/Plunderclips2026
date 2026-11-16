@@ -6,16 +6,12 @@ import { PlatformIcon, type Platform } from "@plunderclips/ui/components/platfor
 import SplitText from "@plunderclips/ui/components/split-text";
 import { Enter } from "@plunderclips/ui/motion/enter";
 import { WordHighlight } from "@plunderclips/ui/motion/word-highlight";
-import heroArt from "../../public/art/fishermen-at-sea.jpg";
-import ninthWave from "../../public/art/ninth-wave.jpg";
-import temeraire from "../../public/art/temeraire.jpg";
-import moonlitNight from "../../public/art/moonlit-night.jpg";
-import stormySea from "../../public/art/stormy-sea.jpg";
+import { art } from "@/lib/art";
 
 /*
   Deal (taste skill): kind gaming · palette deep-sea (remapped to seaofthieves.com cues) · type Big Shoulders (display caps) + DM Sans + Geist Mono
   hero film · nav mega · footer dark · close type · rhythm space · buttons solid · mark wordmark
-  moments: word-highlight (statement). Art: public-domain marine paintings stand in for key art.
+  moments: word-highlight (statement). Art: Sea of Thieves artwork by Namaaay (@ArteInFlames), used under Microsoft's Game Content Usage Rules.
   Layout: fixed header; every section one screen (.screen) with one .wrap on a 12-column grid.
 */
 
@@ -31,22 +27,25 @@ const sections = [
     href: "/clips/weekly",
     title: "This week",
     body: "The top clips of the last seven days, ranked by the crew and refreshed every Monday.",
-    art: ninthWave,
-    alt: "A huge green wave breaking under a golden storm sky, survivors clinging to a mast",
+    art: art.crewAshore.src,
+    alt: art.crewAshore.alt,
+    position: "object-[50%_30%]",
   },
   {
     href: "/clips/best-of",
     title: "Best of",
     body: "The clips people still send each other months later. Krakens, sinks and steals.",
-    art: temeraire,
-    alt: "An old warship towed across calm water at sunset",
+    art: art.galleonCove.src,
+    alt: art.galleonCove.alt,
+    position: "object-[80%_50%]",
   },
   {
     href: "/clips/featured",
     title: "Featured",
     body: "Mods pick a handful each week and put the streamer's channel right beside the clip.",
-    art: moonlitNight,
-    alt: "A sailing ship under a full moon on a calm night sea",
+    art: art.galleonCove.src,
+    alt: art.galleonCove.alt,
+    position: "object-[20%_40%]",
   },
 ];
 
@@ -67,12 +66,12 @@ export default function HomePage() {
       >
         <Enter className="wrap relative overflow-hidden rounded-2xl">
           <Image
-            src={heroArt}
-            alt="Two fishing boats riding a moonlit swell, a lantern glowing on deck"
+            src={art.galleonCove.src}
+            alt={art.galleonCove.alt}
             fill
             preload
             placeholder="blur"
-            /* On phones the painting fills the screen height (about 260vw wide). Asking for 110vw keeps
+            /* On phones the artwork fills the screen height (about 260vw wide). Asking for 110vw keeps
                it near 1x pixel density instead of the full original: a quarter of the bytes for LCP. */
             sizes="(min-width: 1360px) 1280px, (min-width: 768px) 100vw, 110vw"
             className="object-cover object-[35%_45%]"
@@ -154,7 +153,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Statement moment, beside one painting */}
+      {/* Statement moment, beside the crew artwork */}
       <section aria-labelledby="why-title" className="screen" data-moment="word-highlight">
         <div className="wrap grid-12 content-center items-start">
           <div className="col-span-12 md:col-span-7">
@@ -171,12 +170,12 @@ export default function HomePage() {
           </div>
           <div className="relative col-span-12 mt-8 aspect-[4/5] overflow-hidden rounded-2xl md:col-span-5 md:mt-0 md:aspect-auto md:h-[min(70svh,640px)]">
             <Image
-              src={stormySea}
-              alt="A sailing ship heeling over in dark, stormy seas"
+              src={art.crewAshore.src}
+              alt={art.crewAshore.alt}
               fill
               placeholder="blur"
               sizes="(min-width: 768px) 40vw, 100vw"
-              className="object-cover"
+              className="object-cover object-[45%_50%]"
             />
           </div>
         </div>
@@ -210,7 +209,7 @@ export default function HomePage() {
                       fill
                       placeholder="blur"
                       sizes="(min-width: 768px) 33vw, 100vw"
-                      className="object-cover"
+                      className={`object-cover ${s.position}`}
                     />
                   </div>
                   <div className="p-5 md:p-8">

@@ -23,7 +23,7 @@ export const creatorProfile = pgTable(
     handle: text().notNull(),
     displayName: text().notNull(),
     bio: text().notNull().default(""),
-    /** One of the public-domain paintings in BANNERS (creators module). */
+    /** A key from BANNERS (creators module); unknown keys read as DEFAULT_BANNER. */
     banner: text().notNull().default("ninth-wave"),
     /** Denormalised from creator_follow, kept in step by follow(). */
     followerCount: integer().notNull().default(0),
