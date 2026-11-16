@@ -52,6 +52,7 @@ async function Form() {
         motto: "",
         banner: "galleon-cove",
         joinPolicy: "request",
+        sevenTvSetId: null,
       }}
     />
   );

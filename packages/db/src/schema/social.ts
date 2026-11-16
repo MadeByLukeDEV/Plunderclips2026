@@ -30,6 +30,8 @@ export const crew = pgTable(
     /** A key from BANNERS (creators module); unknown keys read as DEFAULT_BANNER. */
     banner: text().notNull().default("ninth-wave"),
     joinPolicy: crewJoinPolicy().notNull().default("request"),
+    /** A 7TV emote set the captain attached; its emotes join the crew channel's. */
+    sevenTvSetId: text(),
     /** Kept in step with crew_member by the social module, inside the same transaction. */
     memberCount: integer().notNull().default(0),
     createdAt: timestamp().defaultNow().notNull(),

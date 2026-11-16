@@ -3,7 +3,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { REPORT_REASONS } from "@plunderclips/moderation";
-import { channelFor, listInbox, listMessages, toWire } from "@plunderclips/social";
+import {
+  channelFor,
+  emotesForChannel,
+  listInbox,
+  listMessages,
+  toWire,
+} from "@plunderclips/social";
 import { Avatar } from "@/components/creators/avatar";
 import { Inbox } from "@/components/chat/inbox";
 import { Thread } from "@/components/chat/thread";
@@ -25,7 +31,11 @@ async function Channel({ params }: Props) {
   const me = session.user.id;
   const channel = await channelFor(channelId, me);
   if (!channel) notFound();
-  const [inbox, page] = await Promise.all([listInbox(me), listMessages(channel.id)]);
+  const [inbox, page, emotes] = await Promise.all([
+    listInbox(me),
+    listMessages(channel.id),
+    emotesForChannel(channel.id),
+  ]);
 
   return (
     <div className="grid-12 items-start">
@@ -69,6 +79,7 @@ async function Channel({ params }: Props) {
           initial={page.messages.map(toWire)}
           hasOlder={page.hasOlder}
           reasons={REPORT_REASONS}
+          emotes={emotes}
         />
       </section>
     </div>

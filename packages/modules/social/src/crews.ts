@@ -8,8 +8,11 @@ import {
   type HandleError,
 } from "@plunderclips/creators";
 import { audit, isStaff, type Actor } from "@plunderclips/moderation";
+import { parseSevenTvSetRef, sevenTvSetExists } from "./emotes";
 
 const { crew, crewMember, crewRequest, creatorProfile, user } = schema;
+
+type FetchLike = (url: string, init?: RequestInit) => Promise<Response>;
 
 export const CREW_NAME_MAX = 40;
 export const CREW_MOTTO_MAX = 160;
@@ -29,6 +32,8 @@ export type Crew = {
   motto: string;
   banner: Banner;
   joinPolicy: JoinPolicy;
+  /** 7TV emote set attached by the captain, or null. */
+  sevenTvSetId: string | null;
   memberCount: number;
   createdAt: Date;
 };
@@ -62,6 +67,7 @@ const crewColumns = {
   motto: crew.motto,
   banner: crew.banner,
   joinPolicy: crew.joinPolicy,
+  sevenTvSetId: crew.sevenTvSetId,
   memberCount: crew.memberCount,
   createdAt: crew.createdAt,
 };
@@ -199,6 +205,8 @@ export type CrewInput = {
   motto?: string;
   banner?: string;
   joinPolicy?: string;
+  /** A 7TV emote set link or id; "" removes it, undefined leaves it as it is. */
+  sevenTvSet?: string;
 };
 
 export type CrewFieldError =
@@ -206,7 +214,8 @@ export type CrewFieldError =
   | { field: "name"; error: "required" | "too_long" }
   | { field: "motto"; error: "too_long" }
   | { field: "banner"; error: "invalid" }
-  | { field: "joinPolicy"; error: "invalid" };
+  | { field: "joinPolicy"; error: "invalid" }
+  | { field: "sevenTvSet"; error: "invalid" | "not_found" };
 
 export type CrewError =
   | "no_profile"
@@ -225,7 +234,14 @@ export type CreateCrewResult =
   | { ok: false; errors: CrewFieldError[] }
   | { ok: false; error: CrewError };
 
-type Clean = { slug: string; name: string; motto: string; banner: Banner; joinPolicy: JoinPolicy };
+type Clean = {
+  slug: string;
+  name: string;
+  motto: string;
+  banner: Banner;
+  joinPolicy: JoinPolicy;
+  sevenTvSetId?: string | null;
+};
 
 function clean(
   input: CrewInput,
@@ -243,6 +259,12 @@ function clean(
   const joinPolicy = input.joinPolicy ?? "request";
   if (!(JOIN_POLICIES as readonly string[]).includes(joinPolicy))
     errors.push({ field: "joinPolicy", error: "invalid" });
+  let sevenTvSetId: string | null | undefined;
+  if (input.sevenTvSet !== undefined) {
+    sevenTvSetId = input.sevenTvSet.trim() ? parseSevenTvSetRef(input.sevenTvSet) : null;
+    if (input.sevenTvSet.trim() && !sevenTvSetId)
+      errors.push({ field: "sevenTvSet", error: "invalid" });
+  }
   if (!slug.ok || errors.length) return { ok: false, errors };
   return {
     ok: true,
@@ -252,6 +274,7 @@ function clean(
       motto,
       banner: banner as Banner,
       joinPolicy: joinPolicy as JoinPolicy,
+      ...(sevenTvSetId !== undefined ? { sevenTvSetId } : {}),
     },
   };
 }
@@ -279,9 +302,15 @@ async function crewsJoined(userId: string): Promise<number> {
 }
 
 /** Founds a crew with the member as its captain. */
-export async function createCrew(userId: string, input: CrewInput): Promise<CreateCrewResult> {
+export async function createCrew(
+  userId: string,
+  input: CrewInput,
+  fetchImpl: FetchLike = fetch,
+): Promise<CreateCrewResult> {
   const c = clean(input);
   if (!c.ok) return c;
+  if (c.value.sevenTvSetId && !(await sevenTvSetExists(c.value.sevenTvSetId, fetchImpl)))
+    return { ok: false, errors: [{ field: "sevenTvSet", error: "not_found" }] };
   if (!(await hasProfile(userId))) return { ok: false, error: "no_profile" };
   if ((await crewsJoined(userId)) >= CREWS_PER_MEMBER_MAX)
     return { ok: false, error: "crew_limit" };
@@ -304,14 +333,17 @@ export type UpdateCrewResult =
   | { ok: false; errors: CrewFieldError[] }
   | { ok: false; error: CrewError };
 
-/** Captain only: name, link, motto, banner and how people join. */
+/** Captain only: name, link, motto, banner, how people join, and the crew's 7TV set. */
 export async function updateCrew(
   actorId: string,
   crewId: string,
   input: CrewInput,
+  fetchImpl: FetchLike = fetch,
 ): Promise<UpdateCrewResult> {
   const c = clean(input);
   if (!c.ok) return c;
+  if (c.value.sevenTvSetId && !(await sevenTvSetExists(c.value.sevenTvSetId, fetchImpl)))
+    return { ok: false, errors: [{ field: "sevenTvSet", error: "not_found" }] };
   const s = await standing(crewId, actorId);
   if (s.kind !== "member" || s.role !== "captain") return { ok: false, error: "forbidden" };
   const [before] = await db().select({ slug: crew.slug }).from(crew).where(eq(crew.id, crewId));

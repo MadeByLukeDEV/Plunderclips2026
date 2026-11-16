@@ -51,6 +51,9 @@ TURNSTILE_SECRET_KEY=
 # optional: extra hosts the widget runs on, comma-separated (default: the host of BETTER_AUTH_URL)
 TURNSTILE_HOSTNAMES=
 
+# optional: 7TV emote set IDs every chat gets (comma-separated)
+SEVENTV_EMOTE_SETS=
+
 # Sign-in providers: each one turns on when both values are set
 TWITCH_CLIENT_ID=
 TWITCH_CLIENT_SECRET=
@@ -195,6 +198,7 @@ Chat streams new messages with server-sent events from `/api/chat/<channel>/stre
 
 - **Traefik** (Dokploy) streams by default.
 - **Cloudflare** proxies event streams; the app sends a heartbeat every 25 s so idle streams stay under Cloudflare's 100 s timeout. Don't add a Cache Rule or "Cache Everything" on `/api/*`.
+- **Emotes:** every chat gets the 7TV and BTTV global sets, plus the 7TV/BTTV emotes of members who linked Twitch. To add your own collection everywhere, make an emote set on 7tv.app, fill it, and put its ID (from `7tv.app/emote-sets/<id>`) in `SEVENTV_EMOTE_SETS` (comma-separated for several). Captains can attach one set to their crew in crew settings. Sets are cached for an hour, so edits on 7TV show up within one.
 - **Redis** is required for live delivery. If it's down, messages still save and show up when the page reconnects or reloads.
 
 ## Troubleshooting
