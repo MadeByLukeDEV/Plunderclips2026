@@ -54,6 +54,13 @@ export function Inbox({ items, current }: { items: InboxItem[]; current?: string
                   >
                     {i.kind === "dm" ? (
                       <Avatar name={i.title} image={i.image} className="size-9 text-[36px]" />
+                    ) : i.image ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- uploaded crew logo
+                      <img
+                        src={i.image}
+                        alt=""
+                        className="size-9 shrink-0 rounded-lg object-cover"
+                      />
                     ) : (
                       <span
                         aria-hidden

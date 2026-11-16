@@ -1,7 +1,9 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { getProfileByUser, suggestHandle } from "@plunderclips/creators";
+import { mediaEnabled } from "@plunderclips/media";
 import { ProfileForm } from "@/components/dashboard/profile-form";
+import { ImageUpload } from "@/components/media/image-upload";
 import { requireSession } from "@/lib/auth-guard";
 
 export const metadata: Metadata = { title: "Your page" };
@@ -28,15 +30,25 @@ async function Editor() {
   const profile = await getProfileByUser(session.user.id);
   const channels = Object.fromEntries((profile?.channels ?? []).map((c) => [c.platform, c.handle]));
   return (
-    <ProfileForm
-      isNew={!profile}
-      initial={{
-        handle: profile?.handle ?? suggestHandle(session.user.name),
-        displayName: profile?.displayName ?? session.user.name.slice(0, 40),
-        bio: profile?.bio ?? "",
-        banner: profile?.banner ?? "galleon-cove",
-        channels,
-      }}
-    />
+    <div className="grid max-w-2xl gap-12">
+      {profile && mediaEnabled() ? (
+        <ImageUpload
+          target="profile-banner"
+          current={profile.bannerUrl}
+          label="Your own banner"
+          hint="Shown instead of the artwork you pick below. JPEG, PNG, WebP, AVIF or GIF up to 8 MB, cropped to 3:1."
+        />
+      ) : null}
+      <ProfileForm
+        isNew={!profile}
+        initial={{
+          handle: profile?.handle ?? suggestHandle(session.user.name),
+          displayName: profile?.displayName ?? session.user.name.slice(0, 40),
+          bio: profile?.bio ?? "",
+          banner: profile?.banner ?? "galleon-cove",
+          channels,
+        }}
+      />
+    </div>
   );
 }

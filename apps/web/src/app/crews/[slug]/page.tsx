@@ -22,7 +22,8 @@ import {
   MemberButtons,
   RequestButtons,
 } from "@/components/crews/crew-buttons";
-import { bannerArt } from "@/lib/art";
+import { StaffRemoveImage } from "@/components/media/staff-remove-image";
+import { bannerImage } from "@/lib/art";
 import { crewPage } from "@/lib/crews-data";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -60,7 +61,7 @@ async function Content({ params }: Props) {
   const data = await crewPage(slug);
   if (!data) notFound();
   const { crew, members } = data;
-  const art = bannerArt[crew.banner];
+  const art = bannerImage(crew, crew.bannerUrl ? `${crew.name} banner` : undefined);
   const groups = (["captain", "officer", "deckhand"] as const)
     .map((role) => [role, members.filter((m) => m.role === role)] as const)
     .filter(([, list]) => list.length);
@@ -74,11 +75,10 @@ async function Content({ params }: Props) {
         <div className="wrap">
           <div className="relative aspect-[3/1] overflow-hidden rounded-2xl md:aspect-[4/1]">
             <Image
-              src={art.src}
+              {...art}
               alt={art.alt}
               fill
               preload
-              placeholder="blur"
               sizes="(min-width: 1360px) 1280px, 100vw"
               className="object-cover"
             />
@@ -89,9 +89,19 @@ async function Content({ params }: Props) {
                 Crew · {crew.memberCount} {crew.memberCount === 1 ? "member" : "members"} ·{" "}
                 {crew.joinPolicy === "open" ? "open to join" : "join by request"}
               </p>
-              <h1 id="crew-name" className="text-h2 mt-3">
-                {crew.name}
-              </h1>
+              <div className="mt-3 flex items-center gap-4">
+                {crew.logoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- uploaded crew logo, already sized
+                  <img
+                    src={crew.logoUrl}
+                    alt={`${crew.name} logo`}
+                    className="border-border size-16 shrink-0 rounded-2xl border object-cover md:size-20"
+                  />
+                ) : null}
+                <h1 id="crew-name" className="text-h2">
+                  {crew.name}
+                </h1>
+              </div>
               {crew.motto ? <p className="text-lead mt-4 max-w-[60ch]">{crew.motto}</p> : null}
             </div>
             <div className="col-span-12 mt-6 md:col-span-4 md:col-start-9 md:mt-0 md:justify-self-end">
@@ -200,9 +210,20 @@ async function Manage({ crew, members }: { crew: Crew; members: CrewMember[] }) 
               Moderation
             </h2>
             <p className="text-muted-foreground mt-2 mb-4 text-sm">
-              Disbanding removes the crew for everyone and is logged in the audit log.
+              Removing an image or disbanding the crew is logged in the audit log.
             </p>
-            <DisbandButton slug={crew.slug} name={crew.name} />
+            <div className="flex flex-wrap items-start gap-3">
+              {crew.bannerUrl ? (
+                <StaffRemoveImage
+                  query={`target=crew-banner&crew=${crew.id}`}
+                  label="Remove uploaded banner"
+                />
+              ) : null}
+              {crew.logoUrl ? (
+                <StaffRemoveImage query={`target=crew-logo&crew=${crew.id}`} label="Remove logo" />
+              ) : null}
+              <DisbandButton slug={crew.slug} name={crew.name} />
+            </div>
           </div>
         </div>
       </section>

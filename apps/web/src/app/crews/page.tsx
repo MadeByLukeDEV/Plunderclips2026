@@ -5,7 +5,7 @@ import Link from "next/link";
 import type { CrewSort } from "@plunderclips/social";
 import { Button } from "@plunderclips/ui/components/button";
 import { cn } from "@plunderclips/ui/lib/utils";
-import { bannerArt } from "@/lib/art";
+import { bannerImage } from "@/lib/art";
 import { crewsList } from "@/lib/crews-data";
 
 export const metadata: Metadata = {
@@ -79,19 +79,26 @@ async function List({ searchParams }: Props) {
               <div className="lift border-border bg-card overflow-hidden rounded-2xl border">
                 <div className="zoom-frame relative aspect-[3/1]">
                   <Image
-                    src={bannerArt[c.banner].src}
+                    {...bannerImage(c, "")}
                     alt=""
                     fill
-                    placeholder="blur"
                     sizes="(min-width: 1024px) 400px, (min-width: 640px) 50vw, 100vw"
                     className="object-cover"
                   />
                 </div>
                 <div className="p-5">
-                  <h2 className="truncate text-lg font-medium">
+                  <h2 className="flex items-center gap-3 text-lg font-medium">
+                    {c.logoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element -- uploaded crew logo
+                      <img
+                        src={c.logoUrl}
+                        alt=""
+                        className="size-9 shrink-0 rounded-lg object-cover"
+                      />
+                    ) : null}
                     <Link
                       href={`/crews/${c.slug}`}
-                      className="after:absolute after:inset-0 focus-visible:outline-none"
+                      className="truncate after:absolute after:inset-0 focus-visible:outline-none"
                     >
                       {c.name}
                     </Link>

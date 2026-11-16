@@ -24,6 +24,8 @@ export {
   transferCaptain,
   removeMember,
   disbandCrew,
+  setCrewImage,
+  clearCrewImage,
   CREW_NAME_MAX,
   CREW_MOTTO_MAX,
   REQUEST_MESSAGE_MAX,
@@ -44,6 +46,8 @@ export {
   type UpdateCrewResult,
   type JoinResult,
   type ActionResult,
+  type CrewImageKind,
+  type CrewImageResult,
 } from "./crews";
 
 export {

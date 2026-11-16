@@ -27,3 +27,7 @@ Thumbs.db
 # tool output
 .playwright-mcp/
 .taste-skill/
+
+# Local image uploads (MEDIA_DRIVER=local)
+.media/
+apps/web/.media/

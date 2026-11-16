@@ -8,6 +8,14 @@ import {
   type HandleError,
 } from "@plunderclips/creators";
 import { audit, isStaff, type Actor } from "@plunderclips/moderation";
+import {
+  mediaUrl,
+  newKey,
+  processImage,
+  removeQuietly,
+  storage,
+  type ProcessError,
+} from "@plunderclips/media";
 import { notify } from "@plunderclips/notifications";
 import { parseSevenTvSetRef, sevenTvSetExists } from "./emotes";
 
@@ -35,6 +43,9 @@ export type Crew = {
   joinPolicy: JoinPolicy;
   /** 7TV emote set attached by the captain, or null. */
   sevenTvSetId: string | null;
+  /** Uploaded banner (wins over `banner`) and logo, or null. */
+  bannerUrl: string | null;
+  logoUrl: string | null;
   memberCount: number;
   createdAt: Date;
 };
@@ -69,13 +80,28 @@ const crewColumns = {
   banner: crew.banner,
   joinPolicy: crew.joinPolicy,
   sevenTvSetId: crew.sevenTvSetId,
+  bannerImage: crew.bannerImage,
+  logoImage: crew.logoImage,
   memberCount: crew.memberCount,
   createdAt: crew.createdAt,
 };
 
-const toCrew = <T extends { banner: string }>(r: T): Omit<T, "banner"> & { banner: Banner } => ({
+const toCrew = <
+  T extends { banner: string; bannerImage: string | null; logoImage: string | null },
+>({
+  banner,
+  bannerImage,
+  logoImage,
+  ...r
+}: T): Omit<T, "banner" | "bannerImage" | "logoImage"> & {
+  banner: Banner;
+  bannerUrl: string | null;
+  logoUrl: string | null;
+} => ({
   ...r,
-  banner: isBanner(r.banner) ? r.banner : DEFAULT_BANNER,
+  banner: isBanner(banner) ? banner : DEFAULT_BANNER,
+  bannerUrl: mediaUrl(bannerImage),
+  logoUrl: mediaUrl(logoImage),
 });
 
 /** Banned members drop off crew pages (banned is null for most users). */
@@ -653,4 +679,73 @@ export async function disbandCrew(actor: Actor, crewId: string): Promise<ActionR
       );
     return { ok: true } as const;
   });
+}
+
+// --- Uploaded banner and logo ---------------------------------------------------------------
+
+export type CrewImageKind = "banner" | "logo";
+export type CrewImageResult =
+  | { ok: true; url: string; slug: string }
+  | { ok: false; error: ProcessError | "forbidden" | "not_found" | "storage" };
+
+const imageColumn = (kind: CrewImageKind) =>
+  kind === "banner" ? crew.bannerImage : crew.logoImage;
+
+/** Captain only: uploads the crew's banner or logo. The old file goes once the new one is saved. */
+export async function setCrewImage(
+  actorId: string,
+  crewId: string,
+  kind: CrewImageKind,
+  bytes: Uint8Array,
+): Promise<CrewImageResult> {
+  const s = await standing(crewId, actorId);
+  if (s.kind !== "member" || s.role !== "captain") return { ok: false, error: "forbidden" };
+  const [row] = await db()
+    .select({ slug: crew.slug, old: imageColumn(kind) })
+    .from(crew)
+    .where(eq(crew.id, crewId));
+  if (!row) return { ok: false, error: "not_found" };
+  const image = await processImage(bytes, kind);
+  if (!image.ok) return image;
+  const key = newKey(kind === "banner" ? "banners" : "logos", "crew", crewId);
+  try {
+    await storage().put(key, image.data, "image/webp");
+  } catch {
+    return { ok: false, error: "storage" };
+  }
+  await db()
+    .update(crew)
+    .set(kind === "banner" ? { bannerImage: key } : { logoImage: key })
+    .where(eq(crew.id, crewId));
+  await removeQuietly(row.old);
+  return { ok: true, url: mediaUrl(key)!, slug: row.slug };
+}
+
+/** The captain removes the crew's banner or logo, or staff take it down (logged). */
+export async function clearCrewImage(
+  actor: Actor,
+  crewId: string,
+  kind: CrewImageKind,
+): Promise<{ ok: true; slug: string } | { ok: false; error: "forbidden" | "not_found" }> {
+  const s = await standing(crewId, actor.id);
+  const captain = s.kind === "member" && s.role === "captain";
+  if (!captain && !isStaff(actor)) return { ok: false, error: "forbidden" };
+  const [row] = await db()
+    .select({ slug: crew.slug, old: imageColumn(kind) })
+    .from(crew)
+    .where(eq(crew.id, crewId));
+  if (!row?.old) return { ok: false, error: "not_found" };
+  await db()
+    .update(crew)
+    .set(kind === "banner" ? { bannerImage: null } : { logoImage: null })
+    .where(eq(crew.id, crewId));
+  if (!captain)
+    await audit(actor.id, {
+      action: "image.remove",
+      targetType: "crew",
+      targetId: crewId,
+      meta: { what: kind, slug: row.slug },
+    });
+  await removeQuietly(row.old);
+  return { ok: true, slug: row.slug };
 }

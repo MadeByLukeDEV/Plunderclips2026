@@ -25,6 +25,8 @@ export const creatorProfile = pgTable(
     bio: text().notNull().default(""),
     /** A key from BANNERS (creators module); unknown keys read as DEFAULT_BANNER. */
     banner: text().notNull().default("ninth-wave"),
+    /** Uploaded banner (media key); shown instead of `banner` when set. */
+    bannerImage: text(),
     /** Denormalised from creator_follow, kept in step by follow(). */
     followerCount: integer().notNull().default(0),
     createdAt: timestamp().defaultNow().notNull(),
