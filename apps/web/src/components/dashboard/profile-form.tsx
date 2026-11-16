@@ -122,7 +122,7 @@ export function ProfileForm({ initial, isNew }: { initial: ProfileFormValues; is
               key={b}
               className={cn(
                 "has-[:focus-visible]:ring-ring/50 relative aspect-[3/2] cursor-pointer overflow-hidden rounded-lg border-2 transition-colors has-[:focus-visible]:ring-[3px]",
-                banner === b ? "border-primary" : "hover:border-border border-transparent",
+                banner === b ? "border-headline" : "hover:border-border border-transparent",
               )}
             >
               <input

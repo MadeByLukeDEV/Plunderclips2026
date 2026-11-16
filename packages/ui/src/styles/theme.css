@@ -1,5 +1,7 @@
 /*
-  Plunderclips theme. Palette dealt by the taste skill: "walnut-tan" (ship-deck wood, bone ink, brass).
+  Plunderclips theme. Palette "deep sea": night-sea blue, sea-glass mint headlines, brick-red calls
+  to action, bone ink; parchment for bands and the light look. Cues from seaofthieves.com, all
+  values and fonts our own (Big Shoulders, DM Sans, Geist Mono: open licences).
   Dark ("deck") is the primary look; [data-theme="light"] is the parchment look.
   Every colour is a token; components use the shadcn names mapped below.
 */
@@ -7,22 +9,26 @@
 
 :root {
   /* palette (deck) */
-  --p-bg: #2b2216;
-  --p-surface: #382d1e;
-  --p-surface-2: #44372a;
-  --p-ink: #e4e2da;
-  --p-muted: #a39a8b;
-  --p-accent: #bda38b;
-  --p-accent-ink: #2b2216;
-  --p-danger: #d9775f;
+  --p-bg: #10141b;
+  --p-deep: #0a0d12;
+  --p-surface: #18202a;
+  --p-surface-2: #222c38;
+  --p-ink: #f1ece0;
+  --p-muted: #a3aba9;
+  --p-headline: #3fd3a0;
+  --p-accent: #b8432f;
+  --p-accent-ink: #fff6e8;
+  --p-ring: #3fd3a0;
+  --p-danger: #f0806b;
 
   /* parchment, used by [data-theme="light"] and .band-parchment */
-  --p-inv-bg: #bda38b;
-  --p-inv-surface: #af9781;
-  --p-inv-ink: #111111;
-  --p-inv-muted: #36312c;
-  --p-inv-accent: #111111;
-  --p-inv-accent-ink: #bda38b;
+  --p-inv-bg: #f4e8cb;
+  --p-inv-surface: #eadbb6;
+  --p-inv-ink: #2a2116;
+  --p-inv-muted: #5a4d3c;
+  --p-inv-headline: #7a2e20;
+  --p-inv-accent: #7a2e20;
+  --p-inv-accent-ink: #f4e8cb;
 
   --background: var(--p-bg);
   --foreground: var(--p-ink);
@@ -41,7 +47,9 @@
   --destructive: var(--p-danger);
   --border: color-mix(in oklab, var(--p-ink) 14%, transparent);
   --input: color-mix(in oklab, var(--p-ink) 20%, transparent);
-  --ring: var(--p-accent);
+  --ring: var(--p-ring);
+  --headline: var(--p-headline);
+  --deep: var(--p-deep);
 
   --radius: 0.75rem;
   --header-h: 72px;
@@ -74,6 +82,7 @@
   --border: color-mix(in oklab, var(--p-inv-ink) 18%, transparent);
   --input: color-mix(in oklab, var(--p-inv-ink) 24%, transparent);
   --ring: var(--p-inv-ink);
+  --headline: var(--p-inv-headline);
 }
 :root[data-theme="light"] {
   color-scheme: light;
@@ -98,9 +107,11 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-headline: var(--headline);
+  --color-deep: var(--deep);
 
-  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
-  --font-sans: var(--font-mona), system-ui, sans-serif;
+  --font-display: var(--font-big-shoulders), "Arial Narrow", system-ui, sans-serif;
+  --font-sans: var(--font-dm-sans), system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, Menlo, Consolas, monospace;
 
   --radius-sm: calc(var(--radius) - 4px);
@@ -142,18 +153,21 @@
     background: var(--background);
     color: var(--foreground);
     font-family: var(--font-sans);
-    font-feature-settings: "ss01";
   }
   h1,
   h2,
   .font-display {
     font-family: var(--font-display);
-    font-weight: 500;
-    font-variation-settings:
-      "opsz" 96,
-      "SOFT" 50;
-    letter-spacing: -0.02em;
+    font-weight: 800;
+    font-variation-settings: "opsz" 72;
+    letter-spacing: 0.005em;
     text-wrap: balance;
+  }
+  /* Headings are condensed caps in the headline colour; .font-display alone (statements) keeps its case. */
+  h1,
+  h2 {
+    color: var(--headline);
+    text-transform: uppercase;
   }
   p {
     text-wrap: pretty;

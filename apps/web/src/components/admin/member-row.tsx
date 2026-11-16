@@ -69,7 +69,7 @@ export function MemberRow({
             .map((r) => (
               <span
                 key={r}
-                className="border-primary text-primary rounded-full border px-2.5 py-0.5 font-mono text-xs"
+                className="border-headline text-headline rounded-full border px-2.5 py-0.5 font-mono text-xs"
               >
                 {ROLE_LABEL[r]}
               </span>

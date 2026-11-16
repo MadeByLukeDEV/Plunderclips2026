@@ -58,7 +58,7 @@ export function WordHighlight({ parts, className }: { parts: Part[]; className?:
         "[&_[data-w]]:transition-colors [&_[data-w]]:duration-150",
         "data-[armed]:[&_[data-w]]:text-[color-mix(in_oklab,var(--foreground)_45%,var(--background))]",
         "data-[armed]:[&_[data-w][data-on]]:text-foreground",
-        "data-[armed]:[&_strong_[data-w][data-on]]:text-primary",
+        "data-[armed]:[&_strong_[data-w][data-on]]:text-headline",
         className,
       )}
     >
@@ -66,7 +66,7 @@ export function WordHighlight({ parts, className }: { parts: Part[]; className?:
         const span = <span data-w>{w}</span>;
         return (
           <span key={key}>
-            {strong ? <strong className="text-primary font-[inherit]">{span}</strong> : span}
+            {strong ? <strong className="text-headline font-[inherit]">{span}</strong> : span}
             {i < words.length - 1 ? " " : null}
           </span>
         );
