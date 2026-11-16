@@ -46,7 +46,8 @@ describe.skipIf(!url)("clip queries (Postgres)", async () => {
     for (const [i, name] of ["a", "b", "c", "d", "e"].entries())
       await insert(name, {
         approvedAt: new Date(now.getTime() - (i + 1) * 86_400_000),
-        channel: name === "a" || name === "c" ? "samestreamer" : "other",
+        // Channels carry the run id: other test files add clips in parallel and must not outrank these.
+        channel: name === "a" || name === "c" ? `same-${run}` : `other-${run}`,
         tags: name === "b" ? ["kraken"] : name === "d" ? ["kraken", "pvp"] : [],
       });
     await insert("f", { status: "pending" });
