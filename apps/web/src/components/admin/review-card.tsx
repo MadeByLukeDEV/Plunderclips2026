@@ -7,9 +7,10 @@ import { Label } from "@plunderclips/ui/components/label";
 import { PlatformIcon } from "@plunderclips/ui/components/platform-icon";
 import { cn } from "@plunderclips/ui/lib/utils";
 import { reviewAction } from "@/app/admin/actions";
-import { formatDate, formatDuration, platformMeta } from "@/components/clips/clip-meta";
+import { formatDuration, platformMeta } from "@/components/clips/clip-meta";
 import { ClipPlayer } from "@/components/clips/clip-player";
 import { ActionMessage, useAdminAction } from "./use-action";
+import { LocalTime } from "@/components/local-time";
 
 export type ReviewCardClip = {
   id: string;
@@ -103,7 +104,9 @@ export function ReviewCard({ clip, playerSrc, tags, sections, reasons, canFeatur
           ) : null}
           <div>
             <dt className="sr-only">Sent</dt>
-            <dd>Sent {formatDate(clip.createdAt)}</dd>
+            <dd>
+              Sent <LocalTime value={clip.createdAt} format="datetime" />
+            </dd>
           </div>
           <div>
             <a

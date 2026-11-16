@@ -2,15 +2,7 @@ import Link from "next/link";
 import type { InboxItem } from "@plunderclips/social";
 import { cn } from "@plunderclips/ui/lib/utils";
 import { Avatar } from "@/components/creators/avatar";
-
-const when = (d: Date | null) => {
-  if (!d) return "";
-  const today = new Date().toDateString() === d.toDateString();
-  return new Intl.DateTimeFormat(
-    "en-GB",
-    today ? { hour: "2-digit", minute: "2-digit" } : { day: "numeric", month: "short" },
-  ).format(d);
-};
+import { LocalTime } from "@/components/local-time";
 
 /** Crew channels and conversations, newest activity first, with unread counts. */
 export function Inbox({ items, current }: { items: InboxItem[]; current?: string }) {
@@ -81,7 +73,9 @@ export function Inbox({ items, current }: { items: InboxItem[]; current?: string
                     </span>
                     <span className="grid justify-items-end gap-1">
                       <span className="text-muted-foreground font-mono text-xs">
-                        {when(i.lastMessageAt)}
+                        {i.lastMessageAt ? (
+                          <LocalTime value={i.lastMessageAt} format="auto" />
+                        ) : null}
                       </span>
                       {i.unread ? (
                         <span className="bg-primary text-primary-foreground min-w-5 rounded-full px-1.5 text-center font-mono text-xs leading-5">

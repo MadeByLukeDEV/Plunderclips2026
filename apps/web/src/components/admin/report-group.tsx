@@ -4,8 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@plunderclips/ui/components/button";
 import { resolveAction } from "@/app/admin/actions";
-import { formatDate } from "@/components/clips/clip-meta";
 import { ActionMessage, useAdminAction } from "./use-action";
+import { LocalTime } from "@/components/local-time";
 
 export type ReportGroupView = {
   targetType: "clip" | "creator" | "message";
@@ -95,7 +95,8 @@ export function ReportGroup({
             <span className="font-medium">{reasons[r.reason] ?? r.reason}</span>
             <span className="text-muted-foreground">
               {" "}
-              · {r.reporterName ?? "anonymous"} · {formatDate(r.createdAt)}
+              · {r.reporterName ?? "anonymous"} ·{" "}
+              <LocalTime value={r.createdAt} format="datetime" />
             </span>
             {r.note ? <p className="text-muted-foreground mt-1">{r.note}</p> : null}
           </li>
