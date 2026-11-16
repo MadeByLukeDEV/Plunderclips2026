@@ -1,10 +1,13 @@
 /**
- * Banner choices: the artwork shipped in apps/web/public/art (credited in the footer).
+ * Banner choices: the art shipped in apps/web/public/art (credited in the footer).
  * Keys only; the web app maps them to its images. No uploads, so nothing to moderate.
  */
 export const BANNERS = {
   "galleon-cove": "Galleon at the cove",
   "crew-ashore": "The crew ashore",
+  "deck-fight": "Fight on deck",
+  "galleon-broadside": "Galleon broadside",
+  "kraken-sunset": "Kraken at sunset",
 } as const;
 
 export type Banner = keyof typeof BANNERS;
