@@ -55,6 +55,11 @@ export function AccountButton({
           Dashboard
         </Link>
       </Button>
+      <Button variant="ghost" size={stacked ? "lg" : "default"} asChild>
+        <Link href="/chat" onClick={onNavigate}>
+          Chat
+        </Link>
+      </Button>
       {staff ? (
         <Button variant="ghost" size={stacked ? "lg" : "default"} asChild>
           <Link href="/admin" onClick={onNavigate}>

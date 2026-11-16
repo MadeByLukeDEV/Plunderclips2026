@@ -189,6 +189,14 @@ repository variable `SITE_URL` so CI builds with your domain.
 
 5. Submit a clip while signed out: the widget shows above the button and the clip lands in the review queue. Rejections are logged as `turnstile rejected`, `turnstile action mismatch` or `turnstile hostname mismatch`.
 
+## Chat (live messages)
+
+Chat streams new messages with server-sent events from `/api/chat/<channel>/stream`, and Redis pub/sub carries them between app instances. Nothing to configure, but the path must not be buffered:
+
+- **Traefik** (Dokploy) streams by default.
+- **Cloudflare** proxies event streams; the app sends a heartbeat every 25 s so idle streams stay under Cloudflare's 100 s timeout. Don't add a Cache Rule or "Cache Everything" on `/api/*`.
+- **Redis** is required for live delivery. If it's down, messages still save and show up when the page reconnects or reloads.
+
 ## Troubleshooting
 
 | Symptom                                              | Look at                                                                                                             |
@@ -200,4 +208,5 @@ repository variable `SITE_URL` so CI builds with your domain.
 | Sign-in fails with "invalid origin"                  | `BETTER_AUTH_URL` must exactly match the public URL, with `https://` and no trailing slash.                         |
 | Sign-in redirect error at the provider               | The redirect URL registered with the provider doesn't match step 5.                                                 |
 | No bot check on `/submit`, anonymous submits refused | `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` aren't set, or they are Cloudflare's test keys.                     |
+| Chat messages only appear after a reload             | Something buffers `/api/chat/*/stream`: check Cloudflare cache rules and any proxy between Traefik and the app.     |
 | Anonymous submits fail the bot check                 | Logs: `hostname mismatch` → add the host to `TURNSTILE_HOSTNAMES`; `rejected` → see Cloudflare's error code.        |

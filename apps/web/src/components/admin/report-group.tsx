@@ -8,7 +8,7 @@ import { formatDate } from "@/components/clips/clip-meta";
 import { ActionMessage, useAdminAction } from "./use-action";
 
 export type ReportGroupView = {
-  targetType: "clip" | "creator";
+  targetType: "clip" | "creator" | "message";
   targetId: string;
   label: string | null;
   href: string | null;
@@ -38,6 +38,7 @@ export function ReportGroup({
   const [takingDown, setTakingDown] = useState(false);
   const target = { targetType: group.targetType, targetId: group.targetId };
   const canTakeDown = group.targetType === "clip" && group.targetStatus === "approved";
+  const canRemoveMessage = group.targetType === "message" && group.targetStatus === "visible";
 
   // A React form action, not onSubmit: before hydration the form can\'t fall back to a native GET.
   const submit = (action: string) => (form: FormData) => {
@@ -53,15 +54,22 @@ export function ReportGroup({
       <div className="flex flex-wrap items-baseline justify-between gap-3">
         <div className="min-w-0">
           <p className="text-muted-foreground font-mono text-xs tracking-wide uppercase">
-            {group.targetType === "clip" ? "Clip" : "Creator page"} · {group.reports.length}{" "}
-            {group.reports.length === 1 ? "report" : "reports"}
+            {{ clip: "Clip", creator: "Creator page", message: "Chat message" }[group.targetType]} ·{" "}
+            {group.reports.length} {group.reports.length === 1 ? "report" : "reports"}
             {group.targetStatus &&
             group.targetStatus !== "approved" &&
-            group.targetStatus !== "active"
+            group.targetStatus !== "active" &&
+            group.targetStatus !== "visible"
               ? ` · ${group.targetStatus}`
               : ""}
           </p>
-          <h2 className="mt-1 truncate font-medium">
+          <h2
+            className={
+              group.targetType === "message"
+                ? "mt-1 font-medium break-words whitespace-pre-line"
+                : "mt-1 truncate font-medium"
+            }
+          >
             {group.href ? (
               <Link href={group.href} className="link-draw" target="_blank">
                 {group.label}
@@ -128,6 +136,16 @@ export function ReportGroup({
           {canTakeDown ? (
             <Button type="button" variant="destructive" onClick={() => setTakingDown(true)}>
               Take down
+            </Button>
+          ) : null}
+          {canRemoveMessage ? (
+            <Button
+              type="submit"
+              formAction={submit("remove_message")}
+              variant="destructive"
+              disabled={pending}
+            >
+              Remove message
             </Button>
           ) : null}
           <Button type="submit" variant="secondary" disabled={pending}>
