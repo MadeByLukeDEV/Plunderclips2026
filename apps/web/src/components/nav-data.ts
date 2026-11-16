@@ -20,4 +20,5 @@ export const clipSections = [
 export const mainLinks = [
   { href: "/creators", label: "Creators" },
   { href: "/crews", label: "Crews" },
+  { href: "/looking-for-crew", label: "Find a crew" },
 ] as const;

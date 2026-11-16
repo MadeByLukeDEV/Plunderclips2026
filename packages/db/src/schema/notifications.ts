@@ -18,6 +18,7 @@ export const notificationKind = pgEnum("notification_kind", [
   "crew_request",
   "crew_accepted",
   "mention",
+  "session_scheduled",
 ]);
 
 /** In-app notifications. Payload fields are a snapshot (titles, names) so a row reads on its own. */

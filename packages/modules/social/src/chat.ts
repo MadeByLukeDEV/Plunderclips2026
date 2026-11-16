@@ -5,6 +5,7 @@ import { mediaUrl } from "@plunderclips/media";
 import { notify } from "@plunderclips/notifications";
 import { slidingWindow } from "@plunderclips/shared";
 import { publish, type ChatMessageWire } from "./chat-bus";
+import { hasOpenLfcPost } from "./lfc";
 
 const {
   chatChannel,
@@ -150,10 +151,12 @@ export async function channelFor(channelId: string, userId: string): Promise<Cha
 }
 
 /**
- * Who you may start a conversation with: a creator you share a crew with, or one who follows you
- * (following is the opt-in). A conversation that already exists stays open either way.
+ * Who you may start a conversation with: a creator you share a crew with, one who follows you
+ * (following is the opt-in), or one with an open looking-for-crew post. A conversation that already exists stays open either way.
  */
 async function mayStartDm(from: string, to: string): Promise<boolean> {
+  // An open looking-for-crew post invites messages from whoever reads it.
+  if (await hasOpenLfcPost(to)) return true;
   const [follows] = await db()
     .select({ c: creatorFollow.creatorId })
     .from(creatorFollow)

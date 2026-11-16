@@ -1,6 +1,14 @@
 import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
-import { getCrewBySlug, listCrewMembers, listCrews, type CrewSort } from "@plunderclips/social";
+import {
+  getCrewBySlug,
+  listCrewMembers,
+  listCrews,
+  listLfcPosts,
+  nextPublicSessions,
+  type CrewSort,
+  type LfcFilter,
+} from "@plunderclips/social";
 
 /**
  * Cached reads for crew pages. Tags: "crews" (every list), "crew:<slug>" (one page). Every crew
@@ -12,7 +20,11 @@ export async function crewPage(slug: string) {
   cacheLife("minutes");
   const crew = await getCrewBySlug(slug);
   if (!crew) return null;
-  return { crew, members: await listCrewMembers(crew.id) };
+  const [members, sessions] = await Promise.all([
+    listCrewMembers(crew.id),
+    nextPublicSessions(crew.id),
+  ]);
+  return { crew, members, sessions };
 }
 
 export async function crewsList(sort: CrewSort) {
@@ -20,4 +32,12 @@ export async function crewsList(sort: CrewSort) {
   cacheTag("crews");
   cacheLife("minutes");
   return listCrews({ sort });
+}
+
+/** Open looking-for-crew posts for a filter. Tag "lfc"; posting or closing expires it. */
+export async function lfcList(filter: LfcFilter) {
+  "use cache";
+  cacheTag("lfc", "creators");
+  cacheLife("minutes");
+  return listLfcPosts(filter);
 }

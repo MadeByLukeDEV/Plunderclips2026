@@ -9,6 +9,8 @@ export type NotificationView = {
   read: boolean;
   createdAt: string;
   image: string | null;
+  /** For session notifications: when it starts (shown in the viewer's timezone). */
+  startsAt?: string;
 };
 
 export function toView(n: Notification): NotificationView {
@@ -53,6 +55,14 @@ export function toView(n: Notification): NotificationView {
         text: `You're in ${n.data.crew}`,
         detail: null,
         href: `/crews/${n.data.slug}`,
+      };
+    case "session_scheduled":
+      return {
+        ...base,
+        text: `New session in ${n.data.crew}: ${n.data.title}`,
+        detail: null,
+        startsAt: n.data.startsAt,
+        href: `/crews/${n.data.slug}/calendar`,
       };
     case "mention":
       return {
