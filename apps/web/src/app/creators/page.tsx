@@ -8,7 +8,7 @@ import { PlatformIcon } from "@plunderclips/ui/components/platform-icon";
 import { cn } from "@plunderclips/ui/lib/utils";
 import { platformMeta } from "@/components/clips/clip-meta";
 import { Avatar } from "@/components/creators/avatar";
-import { bannerArt } from "@/lib/art";
+import { bannerImage } from "@/lib/art";
 import { creatorsList } from "@/lib/creators-data";
 
 export const metadata: Metadata = {
@@ -74,10 +74,9 @@ async function List({ searchParams }: Props) {
               <div className="lift border-border bg-card overflow-hidden rounded-2xl border">
                 <div className="zoom-frame relative aspect-[3/1]">
                   <Image
-                    src={bannerArt[p.banner].src}
+                    {...bannerImage(p, "")}
                     alt=""
                     fill
-                    placeholder="blur"
                     sizes="(min-width: 1024px) 400px, (min-width: 640px) 50vw, 100vw"
                     className="object-cover"
                   />

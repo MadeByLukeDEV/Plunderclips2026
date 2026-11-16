@@ -3,7 +3,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCrewBySlug, standing } from "@plunderclips/social";
+import { mediaEnabled } from "@plunderclips/media";
 import { CrewForm } from "@/components/crews/crew-form";
+import { ImageUpload } from "@/components/media/image-upload";
 import { DisbandButton } from "@/components/crews/crew-buttons";
 import { requireSession } from "@/lib/auth-guard";
 
@@ -43,6 +45,25 @@ async function Settings({ params }: Props) {
         Officers and crewmates are managed on the crew page. Here you change how the crew looks and
         how people join.
       </p>
+      {mediaEnabled() ? (
+        <div className="mt-10 grid max-w-2xl gap-10">
+          <ImageUpload
+            target="crew-logo"
+            crewId={crew.id}
+            current={crew.logoUrl}
+            label="Crew logo"
+            hint="Square, shown in crew lists and chat. At least 64 pixels, up to 8 MB."
+            shape="logo"
+          />
+          <ImageUpload
+            target="crew-banner"
+            crewId={crew.id}
+            current={crew.bannerUrl}
+            label="Crew banner"
+            hint="Shown instead of the artwork you pick below. Cropped to 3:1, up to 8 MB."
+          />
+        </div>
+      ) : null}
       <div className="mt-10">
         <CrewForm
           crewId={crew.id}

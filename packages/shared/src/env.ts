@@ -27,6 +27,22 @@ const serverSchema = z.object({
   TURNSTILE_HOSTNAMES: z.string().optional(),
   /** 7TV emote set IDs (comma-separated) every chat gets, e.g. a Plunderclips set kept on 7tv.app. */
   SEVENTV_EMOTE_SETS: z.string().optional(),
+  // Uploaded images (banners, crew logos). "r2": Cloudflare R2 through its S3 API; "local": files in
+  // MEDIA_LOCAL_DIR served by the app (development only). Unset: uploads are turned off.
+  MEDIA_DRIVER: z.enum(["r2", "local"]).optional(),
+  /** Public base URL of the bucket (its custom domain or r2.dev URL), no trailing slash. */
+  MEDIA_PUBLIC_URL: z.url().optional(),
+  MEDIA_LOCAL_DIR: z.string().optional(),
+  R2_ACCOUNT_ID: z
+    .string()
+    .regex(/^[0-9a-f]{32}$/)
+    .optional(),
+  R2_ACCESS_KEY_ID: z.string().optional(),
+  R2_SECRET_ACCESS_KEY: z.string().optional(),
+  R2_BUCKET: z
+    .string()
+    .regex(/^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/)
+    .optional(),
   IP_HASH_SALT: z.string().min(16).optional(),
   // Client IP (see ip.ts): proxies we trust, counted from the right of X-Forwarded-For, or one
   // header a CDN sets (e.g. cf-connecting-ip). Defaults fit Dokploy's Traefik alone.

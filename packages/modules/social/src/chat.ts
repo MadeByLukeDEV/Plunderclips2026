@@ -1,6 +1,7 @@
 import { and, desc, eq, gt, inArray, isNull, lt, ne, sql } from "drizzle-orm";
 import { db, schema } from "@plunderclips/db";
 import { audit, isStaff, type Actor } from "@plunderclips/moderation";
+import { mediaUrl } from "@plunderclips/media";
 import { notify } from "@plunderclips/notifications";
 import { slidingWindow } from "@plunderclips/shared";
 import { publish, type ChatMessageWire } from "./chat-bus";
@@ -239,7 +240,7 @@ export type InboxItem = {
 /** Every crew channel and conversation the member is in, the most recent first. */
 export async function listInbox(userId: string): Promise<InboxItem[]> {
   const crews = await db()
-    .select({ crewId: crew.id, name: crew.name, slug: crew.slug })
+    .select({ crewId: crew.id, name: crew.name, slug: crew.slug, logo: crew.logoImage })
     .from(crewMember)
     .innerJoin(crew, eq(crew.id, crewMember.crewId))
     .where(eq(crewMember.userId, userId));
@@ -280,7 +281,7 @@ export async function listInbox(userId: string): Promise<InboxItem[]> {
       kind: "crew" as const,
       title: c.name,
       ref: c.slug,
-      image: null,
+      image: mediaUrl(c.logo),
       lastMessageAt: last.get(c.channelId) ?? null,
       unread: unread.get(c.channelId) ?? 0,
     })),

@@ -192,6 +192,28 @@ repository variable `SITE_URL` so CI builds with your domain.
 
 5. Submit a clip while signed out: the widget shows above the button and the clip lands in the review queue. Rejections are logged as `turnstile rejected`, `turnstile action mismatch` or `turnstile hostname mismatch`.
 
+## Image uploads (Cloudflare R2)
+
+Members can upload a profile banner, and captains a crew banner and logo. The app re-encodes every upload to WebP (no EXIF or location data, fixed sizes) and stores it in an R2 bucket that serves the files.
+
+1. Cloudflare dashboard → **R2** → **Create bucket**, e.g. `plunderclips-media`.
+2. The bucket → **Settings** → **Custom Domains** → connect a subdomain of your site's zone, e.g. `media.your-domain`. (The `r2.dev` URL works too, but Cloudflare rate-limits it.)
+3. **R2** → **Manage API tokens** → **Create API token**: permission **Object Read & Write**, limited to that bucket. Copy the **Access Key ID** and **Secret Access Key**. Your **Account ID** is on the R2 overview page.
+4. In Dokploy, set:
+
+   ```env
+   MEDIA_DRIVER=r2
+   MEDIA_PUBLIC_URL=https://media.your-domain
+   R2_ACCOUNT_ID=<32 hex characters>
+   R2_ACCESS_KEY_ID=<from step 3>
+   R2_SECRET_ACCESS_KEY=<from step 3>
+   R2_BUCKET=plunderclips-media
+   ```
+
+5. Redeploy. The upload buttons appear in **Your page** and in crew settings once all six are set. Without them, uploads stay off and the artwork banners are used.
+
+Mods and admins can take an uploaded banner or logo down from the creator or crew page; it's logged in the audit log.
+
 ## Chat (live messages)
 
 Chat streams new messages with server-sent events from `/api/chat/<channel>/stream`, and Redis pub/sub carries them between app instances. Nothing to configure, but the path must not be buffered:
@@ -212,5 +234,7 @@ Chat streams new messages with server-sent events from `/api/chat/<channel>/stre
 | Sign-in fails with "invalid origin"                  | `BETTER_AUTH_URL` must exactly match the public URL, with `https://` and no trailing slash.                         |
 | Sign-in redirect error at the provider               | The redirect URL registered with the provider doesn't match step 5.                                                 |
 | No bot check on `/submit`, anonymous submits refused | `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` aren't set, or they are Cloudflare's test keys.                     |
+| Upload buttons don't show                            | All six `MEDIA_*`/`R2_*` variables must be set (and `MEDIA_DRIVER=r2`).                                             |
+| Uploads fail with "didn't save"                      | The R2 token needs Object Read & Write on that bucket; check the account ID and bucket name.                        |
 | Chat messages only appear after a reload             | Something buffers `/api/chat/*/stream`: check Cloudflare cache rules and any proxy between Traefik and the app.     |
 | Anonymous submits fail the bot check                 | Logs: `hostname mismatch` → add the host to `TURNSTILE_HOSTNAMES`; `rejected` → see Cloudflare's error code.        |

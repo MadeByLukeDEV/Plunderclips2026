@@ -29,6 +29,9 @@ export const crew = pgTable(
     motto: text().notNull().default(""),
     /** A key from BANNERS (creators module); unknown keys read as DEFAULT_BANNER. */
     banner: text().notNull().default("ninth-wave"),
+    /** Uploaded banner and logo (media keys); the banner wins over `banner` when set. */
+    bannerImage: text(),
+    logoImage: text(),
     joinPolicy: crewJoinPolicy().notNull().default("request"),
     /** A 7TV emote set the captain attached; its emotes join the crew channel's. */
     sevenTvSetId: text(),

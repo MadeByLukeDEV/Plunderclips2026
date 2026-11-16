@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { listMyCrews, pendingRequestCount, type Crew, type CrewRole } from "@plunderclips/social";
 import { Button } from "@plunderclips/ui/components/button";
-import { bannerArt } from "@/lib/art";
+import { bannerImage } from "@/lib/art";
 import { requireSession } from "@/lib/auth-guard";
 
 export const metadata: Metadata = { title: "Your crews" };
@@ -95,7 +95,9 @@ function CrewList({ title, crews }: { title: string; crews: { crew: Crew; note: 
             >
               <span className="relative block aspect-square w-20 shrink-0">
                 <Image
-                  src={bannerArt[crew.banner].src}
+                  {...(crew.logoUrl
+                    ? { src: crew.logoUrl, alt: "", unoptimized: true }
+                    : bannerImage(crew, ""))}
                   alt=""
                   fill
                   sizes="80px"

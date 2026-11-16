@@ -6,10 +6,11 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { channelUrl, followerCount, isFollowing, type Profile } from "@plunderclips/creators";
-import { getSession } from "@plunderclips/identity";
-import { REPORT_REASONS } from "@plunderclips/moderation";
+import { getSession, rolesOf } from "@plunderclips/identity";
+import { isStaff, REPORT_REASONS } from "@plunderclips/moderation";
 import { canMessage } from "@plunderclips/social";
 import { MessageButton } from "@/components/chat/message-button";
+import { StaffRemoveImage } from "@/components/media/staff-remove-image";
 import { ReportButton } from "@/components/report-button";
 import { Button } from "@plunderclips/ui/components/button";
 import { PlatformIcon } from "@plunderclips/ui/components/platform-icon";
@@ -18,7 +19,7 @@ import { platformMeta } from "@/components/clips/clip-meta";
 import { GridSkeleton } from "@/components/clips/grid-skeleton";
 import { Avatar } from "@/components/creators/avatar";
 import { FollowButton } from "@/components/creators/follow-button";
-import { bannerArt } from "@/lib/art";
+import { bannerImage } from "@/lib/art";
 import { creatorPage } from "@/lib/creators-data";
 
 type Props = {
@@ -57,7 +58,10 @@ async function Content({ params, searchParams }: Props) {
   const data = await creatorPage(handle, after);
   if (!data) notFound();
   const { profile, clips } = data;
-  const art = bannerArt[profile.banner];
+  const art = bannerImage(
+    profile,
+    profile.bannerUrl ? `${profile.displayName}'s banner` : undefined,
+  );
 
   return (
     <>
@@ -68,11 +72,10 @@ async function Content({ params, searchParams }: Props) {
         <div className="wrap">
           <div className="relative aspect-[3/1] overflow-hidden rounded-2xl md:aspect-[4/1]">
             <Image
-              src={art.src}
+              {...art}
               alt={art.alt}
               fill
               preload
-              placeholder="blur"
               sizes="(min-width: 1360px) 1280px, 100vw"
               className="object-cover"
             />
@@ -195,6 +198,12 @@ async function Follow({ profile }: { profile: Profile }) {
       />
       {messageable ? <MessageButton userId={profile.userId} handle={profile.handle} /> : null}
       <ReportButton targetType="creator" targetId={profile.userId} reasons={REPORT_REASONS} />
+      {profile.bannerUrl && session && isStaff({ id: session.user.id, roles: rolesOf(session) }) ? (
+        <StaffRemoveImage
+          query={`target=profile-banner&user=${encodeURIComponent(profile.userId)}`}
+          label="Remove uploaded banner"
+        />
+      ) : null}
     </div>
   );
 }

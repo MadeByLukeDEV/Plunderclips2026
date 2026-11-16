@@ -1,5 +1,14 @@
 import { and, asc, desc, eq, inArray, ne, or, sql } from "drizzle-orm";
 import { db, schema } from "@plunderclips/db";
+import {
+  mediaUrl,
+  newKey,
+  processImage,
+  removeQuietly,
+  storage,
+  type ProcessError,
+} from "@plunderclips/media";
+import { audit, isStaff, type Actor } from "@plunderclips/moderation";
 import { notify } from "@plunderclips/notifications";
 import { BANNERS, DEFAULT_BANNER, isBanner, type Banner } from "./banners";
 import { CHANNEL_PLATFORMS, parseChannel, type Channel, type ChannelPlatform } from "./channels";
@@ -16,6 +25,8 @@ export type Profile = {
   displayName: string;
   bio: string;
   banner: Banner;
+  /** Uploaded banner; shown instead of `banner` when set. */
+  bannerUrl: string | null;
   /** Avatar from the sign-in platform. */
   image: string | null;
   followerCount: number;
@@ -29,6 +40,7 @@ const profileColumns = {
   displayName: creatorProfile.displayName,
   bio: creatorProfile.bio,
   banner: creatorProfile.banner,
+  bannerImage: creatorProfile.bannerImage,
   image: user.image,
   followerCount: creatorProfile.followerCount,
   createdAt: creatorProfile.createdAt,
@@ -37,9 +49,12 @@ const profileColumns = {
 /** Banned members' pages disappear (banned is null for most users). */
 const visible = or(eq(user.banned, false), sql`${user.banned} is null`)!;
 
-async function withChannels<T extends { userId: string; banner: string }>(
-  rows: T[],
-): Promise<(Omit<T, "banner"> & { banner: Banner; channels: Channel[] })[]> {
+type ProfileRow = Omit<Profile, "banner" | "bannerUrl" | "channels"> & {
+  banner: string;
+  bannerImage: string | null;
+};
+
+async function withChannels(rows: ProfileRow[]): Promise<Profile[]> {
   if (!rows.length) return [];
   const ids = rows.map((r) => r.userId);
   const channels = await db()
@@ -47,8 +62,9 @@ async function withChannels<T extends { userId: string; banner: string }>(
     .from(creatorChannel)
     .where(inArray(creatorChannel.userId, ids));
   const order = (p: string) => CHANNEL_PLATFORMS.indexOf(p as ChannelPlatform);
-  return rows.map((r) => ({
+  return rows.map(({ bannerImage, ...r }) => ({
     ...r,
+    bannerUrl: mediaUrl(bannerImage),
     banner: isBanner(r.banner) ? r.banner : DEFAULT_BANNER,
     channels: channels
       .filter(
@@ -287,3 +303,61 @@ export async function followerCount(creatorId: string): Promise<number> {
 }
 
 export { BANNERS };
+
+// --- Uploaded banner -------------------------------------------------------------------
+
+export type BannerUploadResult =
+  { ok: true; url: string } | { ok: false; error: ProcessError | "no_profile" | "storage" };
+
+/** Replaces the member's uploaded banner. The old file is removed once the new one is saved. */
+export async function setProfileBannerImage(
+  userId: string,
+  bytes: Uint8Array,
+): Promise<BannerUploadResult> {
+  const [row] = await db()
+    .select({ old: creatorProfile.bannerImage })
+    .from(creatorProfile)
+    .where(eq(creatorProfile.userId, userId));
+  if (!row) return { ok: false, error: "no_profile" };
+  const image = await processImage(bytes, "banner");
+  if (!image.ok) return image;
+  const key = newKey("banners", "user", userId);
+  try {
+    await storage().put(key, image.data, "image/webp");
+  } catch {
+    return { ok: false, error: "storage" };
+  }
+  await db()
+    .update(creatorProfile)
+    .set({ bannerImage: key })
+    .where(eq(creatorProfile.userId, userId));
+  await removeQuietly(row.old);
+  return { ok: true, url: mediaUrl(key)! };
+}
+
+/** The member removes their uploaded banner, or staff take it down (logged). */
+export async function clearProfileBannerImage(
+  actor: Actor,
+  userId: string,
+): Promise<{ ok: true } | { ok: false; error: "forbidden" | "not_found" }> {
+  const own = actor.id === userId;
+  if (!own && !isStaff(actor)) return { ok: false, error: "forbidden" };
+  const [row] = await db()
+    .select({ old: creatorProfile.bannerImage })
+    .from(creatorProfile)
+    .where(eq(creatorProfile.userId, userId));
+  if (!row?.old) return { ok: false, error: "not_found" };
+  await db()
+    .update(creatorProfile)
+    .set({ bannerImage: null })
+    .where(eq(creatorProfile.userId, userId));
+  if (!own)
+    await audit(actor.id, {
+      action: "image.remove",
+      targetType: "creator",
+      targetId: userId,
+      meta: { what: "banner" },
+    });
+  await removeQuietly(row.old);
+  return { ok: true };
+}
