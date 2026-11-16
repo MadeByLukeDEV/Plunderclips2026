@@ -74,12 +74,22 @@ Notes:
   page (e.g. `services-postgresql-ab12cd`) as `<db-host>`. `migrate` and `web` join
   `dokploy-network` to reach it. For a database outside Docker, use an address the server can
   reach, not `localhost` (inside a container that's the container itself).
-- **Redis:** leave `REDIS_URL` empty to use the bundled `redis` service. To use a Redis service you
-  already run in Dokploy, set it to that service's internal URL, with its password and a database
+- **Redis:** leave `REDIS_URL` empty to use the bundled `cache` service. To use a Redis service you
+  already run in Dokploy, set it to that service's internal URL (its full internal hostname from Dokploy, not a bare
+  `redis`), with its password and a database
   number of its own: `redis://default:<password>@<redis-host>:6379/1`. The number keeps
   Plunderclips' keys (`auth:`, `rl:`, `views:`) apart from other apps on the same Redis. Don't give
   that Redis an `allkeys-*` eviction policy: it could drop sessions and pending view counts. The
   bundled service then just sits idle.
+- **Redis user (ACL):** if the URL uses its own user, that user needs reads and writes,
+  transactions, Lua scripts (rate limits), `SCAN`/`RENAME` (view counter flush), `SELECT` (the
+  database number) and `INFO` (the client's ready check), on the keys `auth:*`, `rl:*`, `views:*`
+  and `clips:*`:
+
+  ```
+  ACL SETUSER plunderclips on >PASSWORD ~auth:* ~rl:* ~views:* ~clips:* +@all -@dangerous +info +select
+  ```
+
 - Generate secrets with `openssl rand -base64 48`. Never reuse the dev values.
 - `IP_HASH_SALT` salts the IP hashes used for rate limits and abuse review. Changing it later
   resets every rate-limit window and makes old hashes unmatchable. Pick it once.
