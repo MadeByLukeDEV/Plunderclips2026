@@ -9,7 +9,9 @@ name: plunderclips
 x-app-env: &app-env
   NODE_ENV: production
   DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL in Dokploy}
-  REDIS_URL: redis://redis:6379
+  # Your own Redis (e.g. a Redis service in Dokploy: redis://default:<password>@<host>:6379/1).
+  # Empty: the bundled `cache` service below.
+  REDIS_URL: ${REDIS_URL:-redis://cache:6379}
   BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?set BETTER_AUTH_SECRET (32+ random chars)}
   BETTER_AUTH_URL: ${BETTER_AUTH_URL:?set BETTER_AUTH_URL to the public https URL}
   IP_HASH_SALT: ${IP_HASH_SALT:?set IP_HASH_SALT (16+ random chars)}
@@ -33,6 +35,8 @@ services:
     build: { context: .., dockerfile: docker/Dockerfile, target: migrate }
     environment:
       DATABASE_URL: ${DATABASE_URL:?set DATABASE_URL in Dokploy}
+    # dokploy-network: reaches a database Dokploy manages by its internal hostname.
+    networks: [default, dokploy]
     restart: "no"
 
   web:
@@ -44,8 +48,10 @@ services:
         SITE_URL: ${BETTER_AUTH_URL:?set BETTER_AUTH_URL to the public https URL}
     depends_on:
       migrate: { condition: service_completed_successfully }
-      redis: { condition: service_healthy }
+      cache: { condition: service_healthy }
     environment: *app-env
+    # default: the bundled Redis (`cache`, private to this app). dokploy: the database and Dokploy's Traefik.
+    networks: [default, dokploy]
     restart: unless-stopped
     # Reached only through Dokploy's Traefik (add the domain in the Domains tab, port 3000).
     # Never publish this port: the app trusts x-forwarded-for from the proxy for rate limits.
@@ -57,7 +63,9 @@ services:
       start_period: 30s
       retries: 3
 
-  redis:
+  # Bundled Redis, used when REDIS_URL is empty. Named `cache`, not `redis`, so it can never shadow
+  # a Redis service called `redis` on dokploy-network.
+  cache:
     image: redis:8-alpine
     # AOF persistence keeps sessions and rate-limit windows across restarts; maxmemory stops a
     # flood of rate-limit keys from eating the host's RAM.
@@ -80,3 +88,10 @@ services:
 
 volumes:
   redisdata:
+
+networks:
+  # Dokploy's shared network: its managed databases and Traefik live here. Only migrate and web
+  # join it; the bundled Redis (`cache`) stays on this app's own network.
+  dokploy:
+    name: dokploy-network
+    external: true

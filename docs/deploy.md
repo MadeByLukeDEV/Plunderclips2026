@@ -33,9 +33,10 @@ In Dokploy: **Projects → New project → Create service → Compose**.
 
 ## 3. Environment
 
-Open the **Environment** tab and paste the following, filled in. Dokploy writes it to a `.env`
-file next to the compose file. Variables marked _required_ stop the deploy with a clear error
-when they're missing.
+Open the **Environment** tab and paste the following, filled in, then turn on **Create Environment
+File** and save. Without that switch Dokploy stores the variables but never writes the `.env` file
+that compose reads, and the deploy stops with "required variable … is missing a value". Variables
+marked _required_ stop the deploy with a clear error when they're missing.
 
 ```env
 # required
@@ -58,6 +59,9 @@ KICK_CLIENT_SECRET=
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 
+# optional: your own Redis instead of the bundled one, e.g. a Redis service in Dokploy
+REDIS_URL=
+
 # optional: Better Auth hosted dashboard (sends auth events to Better Auth's cloud)
 BETTER_AUTH_API_KEY=
 ```
@@ -66,6 +70,26 @@ Notes:
 
 - `BETTER_AUTH_URL` is also the site URL baked into the build (Open Graph links). After changing
   it, redeploy so the image is rebuilt.
+- **Database host:** for a database Dokploy manages, use its internal hostname from the database's
+  page (e.g. `services-postgresql-ab12cd`) as `<db-host>`. `migrate` and `web` join
+  `dokploy-network` to reach it. For a database outside Docker, use an address the server can
+  reach, not `localhost` (inside a container that's the container itself).
+- **Redis:** leave `REDIS_URL` empty to use the bundled `cache` service. To use a Redis service you
+  already run in Dokploy, set it to that service's internal URL (its full internal hostname from Dokploy, not a bare
+  `redis`), with its password and a database
+  number of its own: `redis://default:<password>@<redis-host>:6379/1`. The number keeps
+  Plunderclips' keys (`auth:`, `rl:`, `views:`) apart from other apps on the same Redis. Don't give
+  that Redis an `allkeys-*` eviction policy: it could drop sessions and pending view counts. The
+  bundled service then just sits idle.
+- **Redis user (ACL):** if the URL uses its own user, that user needs reads and writes,
+  transactions, Lua scripts (rate limits), `SCAN`/`RENAME` (view counter flush), `SELECT` (the
+  database number) and `INFO` (the client's ready check), on the keys `auth:*`, `rl:*`, `views:*`
+  and `clips:*`:
+
+  ```
+  ACL SETUSER plunderclips on >PASSWORD ~auth:* ~rl:* ~views:* ~clips:* +@all -@dangerous +info +select
+  ```
+
 - Generate secrets with `openssl rand -base64 48`. Never reuse the dev values.
 - `IP_HASH_SALT` salts the IP hashes used for rate limits and abuse review. Changing it later
   resets every rate-limit window and makes old hashes unmatchable. Pick it once.
@@ -150,11 +174,12 @@ repository variable `SITE_URL` so CI builds with your domain.
 
 ## Troubleshooting
 
-| Symptom                                              | Look at                                                                                     |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| Deploy fails right away with "set … in Dokploy"      | A required variable is missing in the Environment tab.                                      |
-| `migrate` exits non-zero                             | Its logs: usually `DATABASE_URL` or permissions (the user must own the database).           |
-| `/api/health` 503 with `"database":"down"`           | Can the Dokploy server reach the database host and port? Firewall, `pg_hba.conf`.           |
-| Sign-in fails with "invalid origin"                  | `BETTER_AUTH_URL` must exactly match the public URL, with `https://` and no trailing slash. |
-| Sign-in redirect error at the provider               | The redirect URL registered with the provider doesn't match step 5.                         |
-| No bot check on `/submit`, anonymous submits refused | `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` aren't set.                                 |
+| Symptom                                              | Look at                                                                                                             |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Deploy fails right away with "set … in Dokploy"      | A required variable is missing, or **Create Environment File** is off in the Environment tab.                       |
+| `migrate` fails with `getaddrinfo EAI_AGAIN <host>`  | The database hostname doesn't resolve: check it, and that `dokploy-network` exists (it does on any Dokploy server). |
+| `migrate` exits non-zero                             | Its logs: usually `DATABASE_URL` or permissions (the user must own the database).                                   |
+| `/api/health` 503 with `"database":"down"`           | Can the Dokploy server reach the database host and port? Firewall, `pg_hba.conf`.                                   |
+| Sign-in fails with "invalid origin"                  | `BETTER_AUTH_URL` must exactly match the public URL, with `https://` and no trailing slash.                         |
+| Sign-in redirect error at the provider               | The redirect URL registered with the provider doesn't match step 5.                                                 |
+| No bot check on `/submit`, anonymous submits refused | `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` aren't set.                                                         |
