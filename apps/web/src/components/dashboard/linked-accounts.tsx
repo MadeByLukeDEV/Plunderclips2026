@@ -7,6 +7,7 @@ import { Button } from "@plunderclips/ui/components/button";
 import { PlatformIcon } from "@plunderclips/ui/components/platform-icon";
 import { authClient } from "@plunderclips/identity/client";
 import { providerMeta, type ProviderKey } from "@/components/auth/providers";
+import { formatDate } from "@/components/clips/clip-meta";
 
 type Linked = { id: string; providerId: ProviderKey; accountId: string; createdAt: string };
 
@@ -55,10 +56,7 @@ export function LinkedAccounts({
               <PlatformIcon platform={meta.icon} className="size-6" />
               <div className="min-w-0 flex-1">
                 <p className="font-medium">{meta.label}</p>
-                <p className="text-muted-foreground text-sm">
-                  Linked{" "}
-                  {new Date(a.createdAt).toLocaleDateString(undefined, { dateStyle: "medium" })}
-                </p>
+                <p className="text-muted-foreground text-sm">Linked {formatDate(a.createdAt)}</p>
               </div>
               <Button
                 variant="ghost"

@@ -70,9 +70,11 @@ export default function HomePage() {
             src={heroArt}
             alt="Two fishing boats riding a moonlit swell, a lantern glowing on deck"
             fill
-            priority
+            preload
             placeholder="blur"
-            sizes="(min-width: 1360px) 1280px, (min-width: 768px) 100vw, 260vw"
+            /* On phones the painting fills the screen height (about 260vw wide). Asking for 110vw keeps
+               it near 1x pixel density instead of the full original: a quarter of the bytes for LCP. */
+            sizes="(min-width: 1360px) 1280px, (min-width: 768px) 100vw, 110vw"
             className="object-cover object-[35%_45%]"
           />
           <div className="band-parchment bg-background text-foreground absolute inset-x-0 bottom-0 p-6 sm:inset-x-auto sm:right-8 sm:bottom-8 sm:max-w-[600px] sm:rounded-xl sm:p-12">

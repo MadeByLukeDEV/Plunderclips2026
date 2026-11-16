@@ -74,8 +74,9 @@ export function ClipPlayer({
         if (clipId) sendView(clipId);
       }}
       className={`${frame} group zoom-frame focus-visible:ring-ring/50 relative block overflow-hidden rounded-2xl focus-visible:ring-[3px] focus-visible:outline-none`}
-      aria-label={`Play "${clip.title}" (loads the ${label} player)`}
     >
+      {/* The accessible name starts with the action and still contains the visible text. */}
+      <span className="sr-only">Play “{clip.title}”. </span>
       <ClipThumb clip={clip} eager className="absolute inset-0 aspect-auto size-full" />
       <span className="absolute inset-0 grid place-items-center bg-black/25">
         <span className="bg-primary text-primary-foreground grid size-16 place-items-center rounded-full transition-transform duration-200 group-hover:scale-105 group-active:scale-95 md:size-20">

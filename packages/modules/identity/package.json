@@ -13,7 +13,7 @@
     "lint": "eslint src",
     "auth:schema": "auth generate --config ./auth.cli.ts --output ../../db/src/schema/identity.ts --yes",
     "test": "vitest run",
-    "seed:dev": "tsx --env-file=../../../apps/web/.env.local scripts/seed-dev.ts"
+    "seed:dev": "tsx --env-file-if-exists=../../../apps/web/.env.local scripts/seed-dev.ts"
   },
   "dependencies": {
     "@better-auth/infra": "0.4.29",

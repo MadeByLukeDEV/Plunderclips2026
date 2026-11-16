@@ -126,6 +126,17 @@
   html {
     -webkit-text-size-adjust: 100%;
     text-rendering: optimizeLegibility;
+    /* Anchors and focused elements stop below the fixed header, not under it. */
+    scroll-padding-top: calc(var(--header-h) + 16px);
+  }
+  a,
+  button,
+  input,
+  label,
+  select,
+  summary,
+  textarea {
+    touch-action: manipulation;
   }
   body {
     background: var(--background);

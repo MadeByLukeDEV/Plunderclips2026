@@ -24,7 +24,7 @@ export type MemberView = {
 
 const ROLE_LABEL: Record<string, string> = { creator: "Creator", mod: "Mod", admin: "Admin" };
 const field =
-  "border-input bg-background focus-visible:border-ring focus-visible:ring-ring/50 h-11 rounded-lg border px-3 text-sm outline-none focus-visible:ring-[3px]";
+  "border-input bg-background text-foreground focus-visible:border-ring focus-visible:ring-ring/50 h-11 rounded-lg border px-3 text-sm outline-none focus-visible:ring-[3px]";
 
 export function MemberRow({
   m,

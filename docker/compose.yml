@@ -24,6 +24,8 @@ x-app-env: &app-env
   GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
   GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
   BETTER_AUTH_API_KEY: ${BETTER_AUTH_API_KEY:-}
+  TRUSTED_PROXY_HOPS: ${TRUSTED_PROXY_HOPS:-1}
+  CLIENT_IP_HEADER: ${CLIENT_IP_HEADER:-}
 
 services:
   # Applies pending Drizzle migrations, then exits. `web` only starts once it succeeded.

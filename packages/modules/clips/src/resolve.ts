@@ -14,9 +14,10 @@ export async function resolveClipUrl(
   let result = parseClipUrl(input);
   for (let hop = 0; hop < 3 && result.ok && result.clip.needsResolve; hop++) {
     const res = await get(result.clip.canonicalUrl, {
-      fetch: (url, init) => (opts.fetch ?? fetch)(url, { ...init, redirect: "manual" }),
+      fetch: opts.fetch ?? fetch,
       timeoutMs: opts.timeoutMs ?? 5000,
       allowedHosts: SHORT_LINK_HOSTS,
+      followRedirects: false,
     }).catch(() => null);
     const location = res?.headers.get("location");
     if (!location) return { ok: false, error: "unsupported_url" };

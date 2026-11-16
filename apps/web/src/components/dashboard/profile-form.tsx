@@ -107,7 +107,7 @@ export function ProfileForm({ initial, isNew }: { initial: ProfileFormValues; is
           rows={4}
           value={bio}
           onChange={(e) => setBio(e.target.value)}
-          placeholder="What you stream, when you're live, what kind of crew you sail with"
+          placeholder="What you stream, when you're live, what kind of crew you sail with…"
           className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 dark:bg-input/30 w-full rounded-lg border bg-transparent px-3 py-2 text-base outline-none focus-visible:ring-[3px] md:text-sm"
           {...invalid("bio")}
         />

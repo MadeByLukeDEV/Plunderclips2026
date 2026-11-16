@@ -48,11 +48,19 @@ describe("hashIp / clientIp", async () => {
   });
   const { clientIp, hashIp } = await import("../src/ip");
 
-  it("takes the first forwarded hop", () => {
-    const h = new Headers({ "x-forwarded-for": "203.0.113.7, 10.0.0.2" });
-    expect(clientIp(h)).toBe("203.0.113.7");
+  it("trusts the hop our proxy appended, not what the client sent", () => {
+    // A client can send its own X-Forwarded-For; Traefik appends the real address at the end.
+    const spoofed = new Headers({ "x-forwarded-for": "1.2.3.4, 203.0.113.7" });
+    expect(clientIp(spoofed)).toBe("203.0.113.7");
+    expect(clientIp(new Headers({ "x-forwarded-for": "203.0.113.7" }))).toBe("203.0.113.7");
     expect(clientIp(new Headers({ "x-real-ip": "198.51.100.1" }))).toBe("198.51.100.1");
     expect(clientIp(new Headers())).toBeNull();
+  });
+
+  it("rejects values that aren't IP addresses", () => {
+    expect(clientIp(new Headers({ "x-forwarded-for": "not-an-ip" }))).toBeNull();
+    expect(clientIp(new Headers({ "x-forwarded-for": "1.2.3.4, <script>" }))).toBeNull();
+    expect(clientIp(new Headers({ "x-forwarded-for": "2001:db8::1" }))).toBe("2001:db8::1");
   });
 
   it("hashes without leaking the IP and stays stable", () => {

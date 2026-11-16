@@ -69,7 +69,7 @@ async function Content({ params, searchParams }: Props) {
               src={art.src}
               alt={art.alt}
               fill
-              priority
+              preload
               placeholder="blur"
               sizes="(min-width: 1360px) 1280px, 100vw"
               className="object-cover"

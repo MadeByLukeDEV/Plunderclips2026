@@ -69,6 +69,9 @@ Notes:
 - Generate secrets with `openssl rand -base64 48`. Never reuse the dev values.
 - `IP_HASH_SALT` salts the IP hashes used for rate limits and abuse review. Changing it later
   resets every rate-limit window and makes old hashes unmatchable. Pick it once.
+- **Client IP:** rate limits use the address Traefik adds to `X-Forwarded-For` (the last entry).
+  Behind a CDN, either set `CLIENT_IP_HEADER` to the header it sends (Cloudflare:
+  `CLIENT_IP_HEADER=cf-connecting-ip`), or set `TRUSTED_PROXY_HOPS=2`.
 - `DEV_LOGIN` does nothing in production, so leave it out.
 
 ## 4. Domain

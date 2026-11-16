@@ -51,7 +51,12 @@ async function Members({ searchParams }: Props) {
   return (
     <>
       <form action="/admin/users" className="mt-8 flex max-w-xl gap-2" role="search">
-        <Input name="q" defaultValue={q} placeholder="Name or handle" aria-label="Search members" />
+        <Input
+          name="q"
+          defaultValue={q}
+          placeholder="Name or handle…"
+          aria-label="Search members"
+        />
         {filter !== "all" ? <input type="hidden" name="filter" value={filter} /> : null}
         <Button type="submit" variant="secondary">
           Search
