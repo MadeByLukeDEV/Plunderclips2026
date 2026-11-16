@@ -1,5 +1,6 @@
 import { and, asc, desc, eq, inArray, ne, or, sql } from "drizzle-orm";
 import { db, schema } from "@plunderclips/db";
+import { logger } from "@plunderclips/shared";
 import {
   mediaUrl,
   newKey,
@@ -324,7 +325,8 @@ export async function setProfileBannerImage(
   const key = newKey("banners", "user", userId);
   try {
     await storage().put(key, image.data, "image/webp");
-  } catch {
+  } catch (err) {
+    logger.warn("profile banner upload failed", { key, error: String(err) });
     return { ok: false, error: "storage" };
   }
   await db()

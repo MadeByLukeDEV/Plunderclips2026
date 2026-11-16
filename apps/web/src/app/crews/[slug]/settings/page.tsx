@@ -11,7 +11,10 @@ import { requireSession } from "@/lib/auth-guard";
 
 export const metadata: Metadata = { title: "Crew settings", robots: { index: false } };
 
-type Props = { params: Promise<{ slug: string }> };
+type Props = {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
 
 export default function CrewSettingsPage(props: Props) {
   return (
@@ -25,8 +28,9 @@ export default function CrewSettingsPage(props: Props) {
   );
 }
 
-async function Settings({ params }: Props) {
+async function Settings({ params, searchParams }: Props) {
   const { slug } = await params;
+  const uploadFailed = (await searchParams).upload === "failed";
   const session = await requireSession(`/crews/${slug}/settings`);
   const crew = await getCrewBySlug(slug);
   if (!crew) notFound();
@@ -45,6 +49,14 @@ async function Settings({ params }: Props) {
         Officers and crewmates are managed on the crew page. Here you change how the crew looks and
         how people join.
       </p>
+      {uploadFailed ? (
+        <p
+          role="alert"
+          className="bg-card border-border mt-8 max-w-2xl rounded-xl border p-4 text-sm"
+        >
+          The crew is founded, but an image didn&apos;t upload. Try it again below.
+        </p>
+      ) : null}
       {mediaEnabled() ? (
         <div className="mt-10 grid max-w-2xl gap-10">
           <ImageUpload

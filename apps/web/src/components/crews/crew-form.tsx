@@ -1,8 +1,9 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import type { Banner } from "@plunderclips/creators";
 import { Button } from "@plunderclips/ui/components/button";
@@ -10,6 +11,7 @@ import { Input } from "@plunderclips/ui/components/input";
 import { Label } from "@plunderclips/ui/components/label";
 import { cn } from "@plunderclips/ui/lib/utils";
 import { createCrewAction, updateCrewAction, type CrewFormState } from "@/app/crews/actions";
+import { ImageUpload, uploadImage } from "@/components/media/image-upload";
 import { bannerArt } from "@/lib/art";
 
 export type CrewFormValues = {
@@ -29,7 +31,16 @@ const POLICIES = [
 ] as const;
 
 /** Founds a crew (no crewId) or edits one. */
-export function CrewForm({ initial, crewId }: { initial: CrewFormValues; crewId?: string }) {
+export function CrewForm({
+  initial,
+  crewId,
+  uploads = false,
+}: {
+  initial: CrewFormValues;
+  crewId?: string;
+  /** Founding only: offer logo and banner pickers, uploaded once the crew exists. */
+  uploads?: boolean;
+}) {
   const [state, action, pending] = useActionState<CrewFormState, FormData>(
     crewId ? updateCrewAction.bind(null, crewId) : createCrewAction,
     { status: "idle" },
@@ -37,6 +48,36 @@ export function CrewForm({ initial, crewId }: { initial: CrewFormValues; crewId?
   const [banner, setBanner] = useState<Banner>(initial.banner);
   const [policy, setPolicy] = useState(initial.joinPolicy);
   const [motto, setMotto] = useState(initial.motto);
+  const router = useRouter();
+  const picked = useRef<{ logo: File | null; banner: File | null }>({ logo: null, banner: null });
+  const [uploading, setUploading] = useState(false);
+
+  // Founded: upload what was picked (one at a time), then open the crew. If an image fails, open
+  // the crew settings instead, where it can be tried again.
+  useEffect(() => {
+    if (state.status !== "created") return;
+    const { slug, crewId: id } = state;
+    let cancelled = false;
+    void (async () => {
+      const jobs = (
+        [
+          ["crew-logo", picked.current.logo],
+          ["crew-banner", picked.current.banner],
+        ] as const
+      ).filter(([, f]) => f);
+      if (jobs.length) setUploading(true);
+      let failed = false;
+      for (const [target, file] of jobs) {
+        const r = await uploadImage(target, file!, id);
+        if ("error" in r) failed = true;
+      }
+      if (!cancelled)
+        router.push(failed ? `/crews/${slug}/settings?upload=failed` : `/crews/${slug}`);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [state, router]);
   const errors = state.status === "error" ? state.errors : {};
   const err = (k: string) =>
     errors[k] ? (
@@ -162,6 +203,26 @@ export function CrewForm({ initial, crewId }: { initial: CrewFormValues; crewId?
         )}
       </div>
 
+      {uploads ? (
+        <div className="grid gap-8">
+          <ImageUpload
+            target="crew-logo"
+            current={null}
+            label="Crew logo (optional)"
+            hint="Square, shown in crew lists and chat. Uploaded when you found the crew."
+            shape="logo"
+            onPick={(f) => (picked.current.logo = f)}
+          />
+          <ImageUpload
+            target="crew-banner"
+            current={null}
+            label="Crew banner (optional)"
+            hint="Shown instead of the artwork below. Cropped to 3:1, up to 8 MB."
+            onPick={(f) => (picked.current.banner = f)}
+          />
+        </div>
+      ) : null}
+
       <fieldset className="grid gap-3">
         <legend className="mb-3 text-sm font-medium">Banner</legend>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
@@ -206,9 +267,13 @@ export function CrewForm({ initial, crewId }: { initial: CrewFormValues; crewId?
       ) : null}
 
       <div className="flex flex-wrap items-center gap-4">
-        <Button type="submit" size="lg" disabled={pending}>
-          {pending ? <Loader2 className="size-5 animate-spin" /> : null}
-          {crewId ? "Save changes" : "Found the crew"}
+        <Button
+          type="submit"
+          size="lg"
+          disabled={pending || uploading || state.status === "created"}
+        >
+          {pending || uploading ? <Loader2 className="size-5 animate-spin" /> : null}
+          {crewId ? "Save changes" : uploading ? "Uploading images…" : "Found the crew"}
         </Button>
         {state.status === "saved" ? (
           <p role="status" className="text-sm">

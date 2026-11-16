@@ -7,7 +7,7 @@ import {
 } from "@plunderclips/creators";
 import { getSession, rolesOf } from "@plunderclips/identity";
 import { mediaEnabled, MAX_UPLOAD_BYTES } from "@plunderclips/media";
-import { slidingWindow } from "@plunderclips/shared";
+import { logger, slidingWindow } from "@plunderclips/shared";
 import { clearCrewImage, setCrewImage } from "@plunderclips/social";
 
 /**
@@ -85,10 +85,17 @@ export async function POST(req: Request) {
   const bytes = new Uint8Array(await file.arrayBuffer());
   const me = w.session.user.id;
 
-  const r =
-    t.target === "profile-banner"
-      ? await setProfileBannerImage(me, bytes)
-      : await setCrewImage(me, t.crewId!, t.target === "crew-banner" ? "banner" : "logo", bytes);
+  let r:
+    Awaited<ReturnType<typeof setProfileBannerImage>> | Awaited<ReturnType<typeof setCrewImage>>;
+  try {
+    r =
+      t.target === "profile-banner"
+        ? await setProfileBannerImage(me, bytes)
+        : await setCrewImage(me, t.crewId!, t.target === "crew-banner" ? "banner" : "logo", bytes);
+  } catch (err) {
+    logger.error("upload crashed", { target: t.target, error: String(err) });
+    return json({ error: MESSAGES.storage }, 500);
+  }
   if (!r.ok)
     return json(
       { error: MESSAGES[r.error] ?? "That didn't work." },
