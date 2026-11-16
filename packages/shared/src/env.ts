@@ -23,6 +23,8 @@ const serverSchema = z.object({
   DEV_LOGIN: z.enum(["true", "false"]).optional(),
   TURNSTILE_SITE_KEY: z.string().optional(),
   TURNSTILE_SECRET_KEY: z.string().optional(),
+  // Hostnames Turnstile tokens may be solved on (comma-separated). Default: BETTER_AUTH_URL's host.
+  TURNSTILE_HOSTNAMES: z.string().optional(),
   IP_HASH_SALT: z.string().min(16).optional(),
   // Client IP (see ip.ts): proxies we trust, counted from the right of X-Forwarded-For, or one
   // header a CDN sets (e.g. cf-connecting-ip). Defaults fit Dokploy's Traefik alone.

@@ -49,6 +49,8 @@ export function Turnstile({ siteKey, resetKey }: { siteKey: string; resetKey: un
         if (cancelled || !box.current || widget.current) return;
         widget.current = t.render(box.current, {
           sitekey: siteKey,
+          // Must match TURNSTILE_ACTION in the clips module; the server checks it.
+          action: "submit_clip",
           theme: "dark",
           size: "flexible",
           appearance: "interaction-only",
