@@ -1,0 +1,67 @@
+import { Suspense } from "react";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { getCrewBySlug, standing } from "@plunderclips/social";
+import { CrewForm } from "@/components/crews/crew-form";
+import { DisbandButton } from "@/components/crews/crew-buttons";
+import { requireSession } from "@/lib/auth-guard";
+
+export const metadata: Metadata = { title: "Crew settings", robots: { index: false } };
+
+type Props = { params: Promise<{ slug: string }> };
+
+export default function CrewSettingsPage(props: Props) {
+  return (
+    <section aria-labelledby="crew-settings-title" className="screen">
+      <div className="wrap">
+        <Suspense fallback={<div className="bg-card h-96 max-w-2xl animate-pulse rounded-2xl" />}>
+          <Settings {...props} />
+        </Suspense>
+      </div>
+    </section>
+  );
+}
+
+async function Settings({ params }: Props) {
+  const { slug } = await params;
+  const session = await requireSession(`/crews/${slug}/settings`);
+  const crew = await getCrewBySlug(slug);
+  if (!crew) notFound();
+  const s = await standing(crew.id, session.user.id);
+  if (s.kind !== "member" || s.role !== "captain") notFound();
+
+  return (
+    <>
+      <Link href={`/crews/${crew.slug}`} className="link-draw text-muted-foreground text-sm">
+        Back to {crew.name}
+      </Link>
+      <h1 id="crew-settings-title" className="text-h2 mt-4">
+        Crew settings
+      </h1>
+      <p className="text-muted-foreground mt-3 max-w-[56ch]">
+        Officers and crewmates are managed on the crew page. Here you change how the crew looks and
+        how people join.
+      </p>
+      <div className="mt-10">
+        <CrewForm
+          crewId={crew.id}
+          initial={{
+            slug: crew.slug,
+            name: crew.name,
+            motto: crew.motto,
+            banner: crew.banner,
+            joinPolicy: crew.joinPolicy,
+          }}
+        />
+      </div>
+      <div className="border-border mt-16 max-w-2xl rounded-2xl border border-dashed p-6">
+        <h2 className="font-medium">Disband the crew</h2>
+        <p className="text-muted-foreground mt-2 mb-4 text-sm">
+          To leave but keep the crew going, make someone else captain on the crew page first.
+        </p>
+        <DisbandButton slug={crew.slug} name={crew.name} />
+      </div>
+    </>
+  );
+}
