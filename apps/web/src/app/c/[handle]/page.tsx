@@ -19,6 +19,7 @@ import { platformMeta } from "@/components/clips/clip-meta";
 import { GridSkeleton } from "@/components/clips/grid-skeleton";
 import { Avatar } from "@/components/creators/avatar";
 import { FollowButton } from "@/components/creators/follow-button";
+import { LiveBadges } from "@/components/creators/live";
 import { bannerImage } from "@/lib/art";
 import { breadcrumbs, JsonLd, siteUrl } from "@/lib/seo";
 import { creatorPage } from "@/lib/creators-data";
@@ -121,6 +122,9 @@ async function Content({ params, searchParams }: Props) {
                   {profile.displayName}
                 </h1>
                 <p className="text-muted-foreground font-mono text-sm">@{profile.handle}</p>
+                <Suspense fallback={null}>
+                  <LiveBadges channels={profile.channels} />
+                </Suspense>
               </div>
             </div>
           </div>

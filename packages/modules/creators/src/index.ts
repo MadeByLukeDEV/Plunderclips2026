@@ -38,3 +38,13 @@ export {
   type SaveResult,
   type FollowResult,
 } from "./profiles";
+export {
+  pollLive,
+  twitchLive,
+  kickLive,
+  liveForChannels,
+  liveCreators,
+  type LiveStream,
+  type LiveCreator,
+  type LivePlatform,
+} from "./live";

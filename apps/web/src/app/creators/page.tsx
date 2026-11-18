@@ -8,6 +8,7 @@ import { PlatformIcon } from "@plunderclips/ui/components/platform-icon";
 import { cn } from "@plunderclips/ui/lib/utils";
 import { platformMeta } from "@/components/clips/clip-meta";
 import { Avatar } from "@/components/creators/avatar";
+import { LiveNow } from "@/components/creators/live";
 import { bannerImage } from "@/lib/art";
 import { creatorsList } from "@/lib/creators-data";
 
@@ -29,6 +30,9 @@ export default function CreatorsPage({ searchParams }: Props) {
         <p className="text-lead text-muted-foreground mt-4 max-w-[52ch]">
           Streamers who sail Sea of Thieves, with their channels and their clips in one place.
         </p>
+        <Suspense fallback={null}>
+          <LiveNow title="Live now" bare />
+        </Suspense>
         <Suspense fallback={<ListSkeleton />}>
           <List searchParams={searchParams} />
         </Suspense>

@@ -207,6 +207,21 @@ importers:
         specifier: 4.3.3
         version: 4.3.3
 
+  apps/worker:
+    dependencies:
+      '@plunderclips/clips':
+        specifier: workspace:*
+        version: link:../../packages/modules/clips
+      '@plunderclips/creators':
+        specifier: workspace:*
+        version: link:../../packages/modules/creators
+      '@plunderclips/shared':
+        specifier: workspace:*
+        version: link:../../packages/shared
+      tsx:
+        specifier: 4.23.15
+        version: 4.23.15
+
   packages/db:
     dependencies:
       '@plunderclips/shared':
@@ -237,6 +252,9 @@ importers:
 
   packages/modules/creators:
     dependencies:
+      '@plunderclips/clips':
+        specifier: workspace:*
+        version: link:../clips
       '@plunderclips/db':
         specifier: workspace:*
         version: link:../../db
@@ -255,10 +273,6 @@ importers:
       drizzle-orm:
         specifier: 0.45.4
         version: 0.45.4(kysely@0.29.8)(postgres@4.1.1)
-    devDependencies:
-      '@plunderclips/clips':
-        specifier: workspace:*
-        version: link:../clips
 
   packages/modules/identity:
     dependencies:

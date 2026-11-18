@@ -8,6 +8,7 @@ WORKDIR /repo
 FROM base AS deps
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/web/package.json apps/web/
+COPY apps/worker/package.json apps/worker/
 COPY packages/shared/package.json packages/shared/
 COPY packages/db/package.json packages/db/
 COPY packages/ui/package.json packages/ui/
@@ -34,6 +35,15 @@ COPY packages packages
 ENV NODE_ENV=production
 WORKDIR /repo/packages/db
 CMD ["node", "migrate.mjs"]
+
+# Background jobs (compose service `worker`): live status and view flushing.
+# Runs the TypeScript sources with tsx, like the migrate stage runs from packages.
+FROM deps AS worker
+COPY packages packages
+COPY apps/worker apps/worker
+ENV NODE_ENV=production
+WORKDIR /repo/apps/worker
+CMD ["pnpm", "start"]
 
 FROM node:${NODE_VERSION} AS runner
 WORKDIR /app

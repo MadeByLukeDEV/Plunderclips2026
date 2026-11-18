@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
@@ -7,6 +8,7 @@ import SplitText from "@plunderclips/ui/components/split-text";
 import { Enter } from "@plunderclips/ui/motion/enter";
 import { WordHighlight } from "@plunderclips/ui/motion/word-highlight";
 import type { Metadata } from "next";
+import { LiveNow } from "@/components/creators/live";
 import { art } from "@/lib/art";
 
 /*
@@ -110,6 +112,11 @@ export default function HomePage() {
           </div>
         </Enter>
       </section>
+
+      {/* Streaming Sea of Thieves right now: only shows when someone is. */}
+      <Suspense fallback={null}>
+        <LiveNow sotOnly title="Live now: Sea of Thieves" />
+      </Suspense>
 
       {/* How it works */}
       <section aria-labelledby="how-title" className="screen">
