@@ -1,4 +1,4 @@
-import { flushViews } from "@plunderclips/clips";
+import { flushViews, rotateWeekly, snapshotClipStats } from "@plunderclips/clips";
 import { pollLive } from "@plunderclips/creators";
 import { logger, redis } from "@plunderclips/shared";
 
@@ -15,6 +15,10 @@ const jobs: Job[] = [
   { name: "live-status", everyMs: 60_000, run: () => pollLive() },
   // Views counted in Redis but not yet written to Postgres (a page view normally flushes them).
   { name: "flush-views", everyMs: 5 * 60_000, run: () => flushViews({ force: true }) },
+  // This week's Weekly section from votes and views (mod picks stay; past weeks are final).
+  { name: "weekly-rotation", everyMs: 60 * 60_000, run: () => rotateWeekly() },
+  // Today's view and vote totals per clip, for creator analytics trends.
+  { name: "clip-stats", everyMs: 60 * 60_000, run: () => snapshotClipStats() },
 ];
 
 const timers: NodeJS.Timeout[] = [];

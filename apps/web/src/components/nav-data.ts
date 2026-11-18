@@ -2,7 +2,7 @@ export const clipSections = [
   {
     href: "/clips/weekly",
     label: "This week",
-    blurb: "The week's top clips, picked every Monday.",
+    blurb: "This week's top clips, ranked by votes.",
   },
   {
     href: "/clips/best-of",

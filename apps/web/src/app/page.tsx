@@ -31,7 +31,7 @@ const sections = [
   {
     href: "/clips/weekly",
     title: "This week",
-    body: "The top clips of the last seven days, ranked by the crew and refreshed every Monday.",
+    body: "The top clips approved this week, ranked by your votes and updated every hour.",
     art: art.deckFight.src,
     alt: art.deckFight.alt,
     position: "object-[50%_40%]",

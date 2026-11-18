@@ -73,3 +73,12 @@ export {
   type WithdrawResult,
 } from "./mine";
 export { TURNSTILE_ACTION } from "./turnstile";
+export {
+  rotateWeekly,
+  excludeFromWeek,
+  snapshotClipStats,
+  clipAnalytics,
+  WEEKLY_SIZE,
+  type ClipAnalytics,
+  type ChannelMatch,
+} from "./rotation";

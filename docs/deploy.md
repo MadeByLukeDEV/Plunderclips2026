@@ -162,7 +162,7 @@ and creators) can be done from `/admin/users`.
 
 ## Worker (live status)
 
-The `worker` service runs background jobs: it checks every creator's Twitch and Kick channels once a minute for live status (the "Live now" badges and strip), and writes pending view counts to Postgres. It uses the same `TWITCH_CLIENT_ID/SECRET` and `KICK_CLIENT_ID/SECRET` as sign-in; without them, that platform's live status stays off. Run exactly one worker; its logs show each job (`job done` / `job failed`).
+The `worker` service runs background jobs: it checks every creator's Twitch and Kick channels once a minute for live status (the "Live now" badges and strip), writes pending view counts to Postgres, fills this week's **This week** section from votes every hour (mod picks stay, and clips a mod removed stay out), and saves each clip's daily view and vote totals for the creator analytics page. It uses the same `TWITCH_CLIENT_ID/SECRET` and `KICK_CLIENT_ID/SECRET` as sign-in; without them, that platform's live status stays off. Run exactly one worker; its logs show each job (`job done` / `job failed`).
 
 ## Search engines and AI search
 

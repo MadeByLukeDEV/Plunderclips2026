@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, ne, or, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, ne, or, sql } from "drizzle-orm";
 import { db, schema } from "@plunderclips/db";
 import { logger } from "@plunderclips/shared";
 import {
@@ -373,4 +373,31 @@ export async function listProfilesForSitemap(): Promise<{ handle: string; update
     .where(visible)
     .orderBy(desc(creatorProfile.updatedAt))
     .limit(45_000);
+}
+
+/**
+ * New followers per day (UTC) over the last `days`, oldest first. Counts people who still follow
+ * (an unfollow removes the row), so it's growth that stuck.
+ */
+export async function followerGrowth(
+  creatorId: string,
+  days = 30,
+  now = new Date(),
+): Promise<{ day: string; follows: number }[]> {
+  const span = Math.min(Math.max(days, 7), 90);
+  const since = new Date(now.getTime() - (span - 1) * 86_400_000);
+  since.setUTCHours(0, 0, 0, 0);
+  const rows = await db()
+    .select({
+      day: sql<string>`to_char(${creatorFollow.createdAt} at time zone 'UTC', 'YYYY-MM-DD')`,
+      n: sql<number>`count(*)::int`,
+    })
+    .from(creatorFollow)
+    .where(and(eq(creatorFollow.creatorId, creatorId), gte(creatorFollow.createdAt, since)))
+    .groupBy(sql`1`);
+  const by = new Map(rows.map((r) => [r.day, r.n]));
+  return Array.from({ length: span }, (_, i) => {
+    const day = new Date(since.getTime() + i * 86_400_000).toISOString().slice(0, 10);
+    return { day, follows: by.get(day) ?? 0 };
+  });
 }

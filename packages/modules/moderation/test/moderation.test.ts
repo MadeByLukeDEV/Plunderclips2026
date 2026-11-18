@@ -261,6 +261,38 @@ describe.skipIf(!ready)("moderation (Postgres)", async () => {
         );
       expect(log!.meta).toMatchObject({ removed: [b] });
     });
+
+    it("keeps a clip a mod removed from a week out of the automatic rotation", async () => {
+      // A week in 2032, so no other test's clips are in it.
+      const period = "2032-W10";
+      const a = await newClip("week-a", "approved");
+      const b = await newClip("week-b", "approved");
+      for (const id of [a, b])
+        await db().insert(schema.clipSection).values({ clipId: id, sectionSlug: "weekly", period });
+      await m.arrangeSection(mod, "weekly", period, [a]);
+      const [ex] = await db()
+        .select()
+        .from(schema.sectionExclusion)
+        .where(
+          and(eq(schema.sectionExclusion.period, period), eq(schema.sectionExclusion.clipId, b)),
+        );
+      expect(ex).toMatchObject({ sectionSlug: "weekly", excludedByUserId: mod.id });
+      // The kept pick is now the mod's, so the rotation won't reshuffle it.
+      const [kept] = await db()
+        .select({ by: schema.clipSection.addedByUserId })
+        .from(schema.clipSection)
+        .where(and(eq(schema.clipSection.period, period), eq(schema.clipSection.clipId, a)));
+      expect(kept!.by).toBe(mod.id);
+      // Picking it by hand again clears the exclusion.
+      await m.reviewClip(mod, b, { decision: "update", sections: [{ slug: "weekly", period }] });
+      const left = await db()
+        .select()
+        .from(schema.sectionExclusion)
+        .where(
+          and(eq(schema.sectionExclusion.period, period), eq(schema.sectionExclusion.clipId, b)),
+        );
+      expect(left).toEqual([]);
+    });
   });
 
   describe("reports", () => {
