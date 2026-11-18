@@ -1,5 +1,6 @@
 import { flushViews, rotateWeekly, snapshotClipStats } from "@plunderclips/clips";
 import { pollLive } from "@plunderclips/creators";
+import { warmEmotes } from "@plunderclips/social";
 import { logger, redis } from "@plunderclips/shared";
 
 /**
@@ -19,6 +20,8 @@ const jobs: Job[] = [
   { name: "weekly-rotation", everyMs: 60 * 60_000, run: () => rotateWeekly() },
   // Today's view and vote totals per clip, for creator analytics trends.
   { name: "clip-stats", everyMs: 60 * 60_000, run: () => snapshotClipStats() },
+  // 7TV and BTTV emotes for chat, fetched here because 7TV can take 40 s to answer.
+  { name: "warm-emotes", everyMs: 30 * 60_000, run: () => warmEmotes() },
 ];
 
 const timers: NodeJS.Timeout[] = [];

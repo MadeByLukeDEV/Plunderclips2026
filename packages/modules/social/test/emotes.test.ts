@@ -90,10 +90,12 @@ describe.skipIf(!url)("emotes for a channel (Postgres + Redis)", async () => {
       .delete(schema.user)
       .where(like(schema.user.id, `test-${run}-%`));
     await redis().del(
-      `emotes:twitch:v1:${twitchId}`,
-      "emotes:global:v1",
-      "emotes:7tvset:v1:01HSXTE0000000000000000001",
-      "emotes:7tvset:v1:01HCREW0000000000000000001",
+      `emotes:7tv-twitch:v2:${twitchId}`,
+      `emotes:bttv-twitch:v2:${twitchId}`,
+      "emotes:7tv-global:v2",
+      "emotes:bttv-global:v2",
+      "emotes:7tvset:v2:01HSXTE0000000000000000001",
+      "emotes:7tvset:v2:01HCREW0000000000000000001",
     );
   });
 
@@ -207,5 +209,59 @@ describe.skipIf(!url)("emotes for a channel (Postgres + Redis)", async () => {
     const before = calls.filter((c) => c.includes(twitchId)).length;
     await emotesForChannel(channelId, fake);
     expect(calls.filter((c) => c.includes(twitchId)).length).toBe(before);
+  });
+});
+
+/** A slow 7TV (it can take 40 s) never empties BTTV or holds a chat page for long. */
+describe.skipIf(!process.env.REDIS_URL)("emote cache with a slow 7TV", async () => {
+  Object.assign(process.env, {
+    DATABASE_URL: process.env.DATABASE_URL ?? "postgres://x@localhost/x",
+    BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET ?? "x".repeat(32),
+    BETTER_AUTH_URL: process.env.BETTER_AUTH_URL ?? "http://localhost:3000",
+  });
+  const { redis } = await import("@plunderclips/shared");
+  const e = await import("../src/emotes");
+  const keys = ["emotes:7tv-global:v2", "emotes:bttv-global:v2"];
+
+  afterAll(async () => {
+    await redis().del(...keys);
+    e.clearEmoteMemoryForTests();
+  });
+
+  it("serves BTTV at once, then 7TV once it has answered", async () => {
+    await redis().del(...keys);
+    e.clearEmoteMemoryForTests();
+    const fake = async (u: string) => {
+      if (u.includes("7tv")) {
+        await new Promise((r) => setTimeout(r, 3500));
+        return new Response(
+          JSON.stringify({ emotes: [{ id: "01HGLOBAL00000000000000001", name: "Kraken" }] }),
+        );
+      }
+      return new Response(JSON.stringify([{ id: "64bbbbbbbbbbbbbbbbbbbbbb", code: "CiGrip" }]));
+    };
+
+    const t0 = Date.now();
+    const first = await e.globalEmotes(fake);
+    expect(Date.now() - t0).toBeLessThan(3200);
+    expect(first.map((x) => x.code)).toEqual(["CiGrip"]);
+
+    // The 7TV load kept going after the page stopped waiting.
+    await new Promise((r) => setTimeout(r, 1500));
+    const second = await e.globalEmotes(fake);
+    expect(second.map((x) => x.code)).toEqual(["Kraken", "CiGrip"]);
+  }, 10_000);
+
+  it("keeps serving from memory when Redis has nothing (or refuses)", async () => {
+    await redis().del(...keys);
+    let calls = 0;
+    const counting = async () => {
+      calls++;
+      return new Response("[]");
+    };
+    // Memory still holds the last test's sets, so no fetch happens.
+    const again = await e.globalEmotes(counting);
+    expect(again.map((x) => x.code)).toEqual(["Kraken", "CiGrip"]);
+    expect(calls).toBe(0);
   });
 });

@@ -218,6 +218,9 @@ importers:
       '@plunderclips/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@plunderclips/social':
+        specifier: workspace:*
+        version: link:../../packages/modules/social
       tsx:
         specifier: 4.23.15
         version: 4.23.15

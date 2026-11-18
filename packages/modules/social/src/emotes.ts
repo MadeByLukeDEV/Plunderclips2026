@@ -75,48 +75,133 @@ export function parseBttv(list: unknown): Emote[] {
   return out;
 }
 
+/**
+ * 7TV's API can take 40 s to answer (BTTV: well under 1 s), so a fetch gets plenty of time; pages
+ * never wait that long, because `cached` stops waiting after WAIT_MS and serves what it has.
+ */
+const FETCH_TIMEOUT_MS = 45_000;
+/** How long a page waits for a set nobody has loaded yet. The load keeps going after that. */
+const WAIT_MS = 2500;
+/** A set's last good copy is kept this long, and served (refreshing behind it) once it's stale. */
+const KEEP_SECONDS = 7 * 24 * 60 * 60;
+
 async function getJson(url: string, fetchImpl: FetchLike): Promise<unknown | null> {
   try {
     const res = await fetchImpl(url, {
       headers: { accept: "application/json", "user-agent": "plunderclips (+chat emotes)" },
-      signal: AbortSignal.timeout(5000),
+      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
     if (res.status === 404) return null;
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return await res.json();
   } catch (err) {
-    logger.warn("emote fetch failed", { url, error: String(err) });
+    // Next stops fetches when a background prerender ends; the real request loads them again.
+    if (!String(err).includes("During prerendering"))
+      logger.warn("emote fetch failed", { url, error: String(err) });
     throw err;
   }
 }
 
-/** Redis-cached loader. A failed fetch isn't cached, so the next page view tries again. */
-async function cached(key: string, ttl: number, load: () => Promise<Emote[]>): Promise<Emote[]> {
+type Entry = { at: number; emotes: Emote[] };
+
+/** In-process copy, so emotes stay cached when Redis is down or refuses the key. */
+const memory = new Map<string, Entry>();
+const MEMORY_MAX = 1000;
+/** One load per key at a time, however many chats open at once. */
+const inflight = new Map<string, Promise<Emote[]>>();
+
+function remember(key: string, entry: Entry) {
+  memory.delete(key);
+  memory.set(key, entry);
+  if (memory.size > MEMORY_MAX) memory.delete(memory.keys().next().value!);
+}
+
+async function read(key: string): Promise<Entry | null> {
+  const m = memory.get(key);
+  if (m) return m;
   try {
-    const hit = await redis().get(key);
-    if (hit) return JSON.parse(hit) as Emote[];
+    const raw = await redis().get(key);
+    const e = raw ? (JSON.parse(raw) as Entry) : null;
+    if (e && typeof e.at === "number" && Array.isArray(e.emotes)) {
+      remember(key, e);
+      return e;
+    }
   } catch {
-    // Redis down: load live.
+    // Redis down or refusing: load live.
   }
+  return null;
+}
+
+function refresh(key: string, load: () => Promise<Emote[]>): Promise<Emote[]> {
+  let p = inflight.get(key);
+  if (!p) {
+    p = load()
+      .then(async (emotes) => {
+        const entry = { at: Date.now(), emotes };
+        remember(key, entry);
+        await redis()
+          .set(key, JSON.stringify(entry), "EX", KEEP_SECONDS)
+          .catch(() => {});
+        return emotes;
+      })
+      .finally(() => inflight.delete(key));
+    inflight.set(key, p);
+  }
+  return p;
+}
+
+/**
+ * Stale-while-revalidate: a cached set comes back at once (refreshed in the background once it's
+ * older than `ttl`); a set nobody has loaded yet is waited for up to `wait` ms, then the page gets
+ * none and the load finishes for the next one. A failed load is never cached.
+ */
+async function cached(
+  key: string,
+  ttl: number,
+  load: () => Promise<Emote[]>,
+  wait = WAIT_MS,
+): Promise<Emote[]> {
+  const hit = await read(key);
+  if (hit) {
+    if (Date.now() - hit.at > ttl * 1000) refresh(key, load).catch(() => {});
+    return hit.emotes;
+  }
+  const p = refresh(key, load).catch(() => [] as Emote[]);
+  if (!Number.isFinite(wait)) return p;
+  let timer: NodeJS.Timeout | undefined;
+  const gaveUp = new Promise<Emote[]>((r) => {
+    timer = setTimeout(() => r([]), wait);
+  });
   try {
-    const emotes = await load();
-    await redis()
-      .set(key, JSON.stringify(emotes), "EX", ttl)
-      .catch(() => {});
-    return emotes;
-  } catch {
-    return [];
+    return await Promise.race([p, gaveUp]);
+  } finally {
+    clearTimeout(timer);
   }
 }
 
-export function globalEmotes(fetchImpl: FetchLike = fetch): Promise<Emote[]> {
-  return cached("emotes:global:v1", GLOBAL_TTL, async () => {
-    const [seven, bttv] = await Promise.all([
-      getJson("https://7tv.io/v3/emote-sets/global", fetchImpl),
-      getJson("https://api.betterttv.net/3/cached/emotes/global", fetchImpl),
-    ]);
-    return [...parse7tv(seven), ...parseBttv(bttv)];
-  });
+/** Tests: forget the in-process copies. */
+export function clearEmoteMemoryForTests() {
+  memory.clear();
+  inflight.clear();
+}
+
+/** 7TV and BTTV are cached apart, so one being slow or down never empties the other. */
+export function globalEmotes(fetchImpl: FetchLike = fetch, wait = WAIT_MS): Promise<Emote[]> {
+  return Promise.all([
+    cached(
+      "emotes:7tv-global:v2",
+      GLOBAL_TTL,
+      async () => parse7tv(await getJson("https://7tv.io/v3/emote-sets/global", fetchImpl)),
+      wait,
+    ),
+    cached(
+      "emotes:bttv-global:v2",
+      GLOBAL_TTL,
+      async () =>
+        parseBttv(await getJson("https://api.betterttv.net/3/cached/emotes/global", fetchImpl)),
+      wait,
+    ),
+  ]).then((l) => l.flat());
 }
 
 /** One Twitch channel's 7TV set and BTTV channel and shared emotes. */
@@ -125,17 +210,19 @@ export function twitchChannelEmotes(
   fetchImpl: FetchLike = fetch,
 ): Promise<Emote[]> {
   if (!TWITCH_ID.test(twitchId)) return Promise.resolve([]);
-  return cached(`emotes:twitch:v1:${twitchId}`, USER_TTL, async () => {
-    const [seven, bttv] = await Promise.all([
-      getJson(`https://7tv.io/v3/users/twitch/${twitchId}`, fetchImpl),
-      getJson(`https://api.betterttv.net/3/cached/users/twitch/${twitchId}`, fetchImpl),
-    ]);
-    const b = bttv as { channelEmotes?: unknown[]; sharedEmotes?: unknown[] } | null;
-    return [
-      ...parse7tv((seven as { emote_set?: unknown } | null)?.emote_set),
-      ...parseBttv([...(b?.channelEmotes ?? []), ...(b?.sharedEmotes ?? [])]),
-    ];
-  });
+  return Promise.all([
+    cached(`emotes:7tv-twitch:v2:${twitchId}`, USER_TTL, async () => {
+      const seven = await getJson(`https://7tv.io/v3/users/twitch/${twitchId}`, fetchImpl);
+      return parse7tv((seven as { emote_set?: unknown } | null)?.emote_set);
+    }),
+    cached(`emotes:bttv-twitch:v2:${twitchId}`, USER_TTL, async () => {
+      const b = (await getJson(
+        `https://api.betterttv.net/3/cached/users/twitch/${twitchId}`,
+        fetchImpl,
+      )) as { channelEmotes?: unknown[]; sharedEmotes?: unknown[] } | null;
+      return parseBttv([...(b?.channelEmotes ?? []), ...(b?.sharedEmotes ?? [])]);
+    }),
+  ]).then((l) => l.flat());
 }
 
 /**
@@ -153,10 +240,17 @@ export function parseSevenTvSetRef(input: string): string | null {
 }
 
 /** One 7TV emote set by id; empty if it doesn't exist or 7TV is down. */
-export function sevenTvSet(id: string, fetchImpl: FetchLike = fetch): Promise<Emote[]> {
+export function sevenTvSet(
+  id: string,
+  fetchImpl: FetchLike = fetch,
+  wait = WAIT_MS,
+): Promise<Emote[]> {
   if (!SET_ID.test(id)) return Promise.resolve([]);
-  return cached(`emotes:7tvset:v1:${id}`, USER_TTL, async () =>
-    parse7tv(await getJson(`https://7tv.io/v3/emote-sets/${id}`, fetchImpl)),
+  return cached(
+    `emotes:7tvset:v2:${id}`,
+    USER_TTL,
+    async () => parse7tv(await getJson(`https://7tv.io/v3/emote-sets/${id}`, fetchImpl)),
+    wait,
   );
 }
 
@@ -241,4 +335,16 @@ export async function emotesForChannel(
       .slice(0, max);
   const channel = take([...crewSet!, ...perMember.flat()], 2000);
   return { channel, site: take(site!, 2000), global: take(global!, 2000) };
+}
+
+/**
+ * Loads the global and site sets into the cache, waiting as long as 7TV takes. Run by the worker
+ * every 30 minutes, so chats rarely wait on 7TV themselves.
+ */
+export async function warmEmotes(fetchImpl: FetchLike = fetch): Promise<number> {
+  const [global, site] = await Promise.all([
+    globalEmotes(fetchImpl, Infinity),
+    Promise.all(siteSetIds().map((id) => sevenTvSet(id, fetchImpl, Infinity))),
+  ]);
+  return global.length + site.flat().length;
 }
