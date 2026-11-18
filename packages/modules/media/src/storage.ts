@@ -46,6 +46,46 @@ export function mediaUrl(key: string | null | undefined): string | null {
   return null;
 }
 
+/**
+ * R2's own reason from an S3 error response ("HTTP 403 SignatureDoesNotMatch: The request
+ * signature we calculated does not match…"), so the log says what to fix. Secrets never appear
+ * in these bodies.
+ */
+async function r2Error(res: Response): Promise<string> {
+  const body = await res.text().catch(() => "");
+  const code = body.match(/<Code>([^<]{1,80})<\/Code>/)?.[1];
+  const message = body.match(/<Message>([^<]{1,300})<\/Message>/)?.[1];
+  let out = `HTTP ${res.status}`;
+  if (code) out += ` ${code}`;
+  if (message) out += `: ${message.trim()}`;
+  const hint = code ? R2_HINTS[code] : undefined;
+  if (hint) out += ` (check: ${hint})`;
+  return out;
+}
+
+/** A request that never got an answer (wrong account id, DNS, firewall) says so plainly. */
+async function reach(p: Promise<Response>): Promise<Response> {
+  try {
+    return await p;
+  } catch (err) {
+    const cause = (err as { cause?: { code?: string } }).cause?.code;
+    throw new Error(
+      `R2 unreachable${cause ? ` (${cause})` : ""}: check R2_ACCOUNT_ID and that the server can reach *.r2.cloudflarestorage.com`,
+    );
+  }
+}
+
+/** What to check for each R2 error code, for the log line. */
+export const R2_HINTS: Record<string, string> = {
+  SignatureDoesNotMatch:
+    "R2_SECRET_ACCESS_KEY is wrong (use the S3 secret from the R2 API token, not a Cloudflare API token)",
+  InvalidAccessKeyId: "R2_ACCESS_KEY_ID is wrong, or the R2 API token was deleted",
+  AccessDenied: "the R2 API token needs Object Read & Write on this bucket",
+  NoSuchBucket:
+    "R2_BUCKET doesn't match the bucket name, or it's in another account (R2_ACCOUNT_ID)",
+  InvalidBucketName: "R2_BUCKET isn't a valid bucket name",
+};
+
 /** Cloudflare R2 through its S3 API. Objects are immutable (a new key per upload), cached for a year. */
 function r2(): Storage {
   const e = env();
@@ -58,19 +98,21 @@ function r2(): Storage {
   const base = `https://${e.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${e.R2_BUCKET}`;
   return {
     async put(key, data, contentType) {
-      const res = await client.fetch(`${base}/${key}`, {
-        method: "PUT",
-        body: new Uint8Array(data),
-        headers: {
-          "content-type": contentType,
-          "cache-control": "public, max-age=31536000, immutable",
-        },
-      });
-      if (!res.ok) throw new Error(`R2 put failed: HTTP ${res.status}`);
+      const res = await reach(
+        client.fetch(`${base}/${key}`, {
+          method: "PUT",
+          body: new Uint8Array(data),
+          headers: {
+            "content-type": contentType,
+            "cache-control": "public, max-age=31536000, immutable",
+          },
+        }),
+      );
+      if (!res.ok) throw new Error(`R2 put failed: ${await r2Error(res)}`);
     },
     async remove(key) {
-      const res = await client.fetch(`${base}/${key}`, { method: "DELETE" });
-      if (!res.ok && res.status !== 404) throw new Error(`R2 delete failed: HTTP ${res.status}`);
+      const res = await reach(client.fetch(`${base}/${key}`, { method: "DELETE" }));
+      if (!res.ok && res.status !== 404) throw new Error(`R2 delete failed: ${await r2Error(res)}`);
     },
   };
 }
