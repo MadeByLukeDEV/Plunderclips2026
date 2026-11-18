@@ -99,7 +99,8 @@ export async function POST(req: Request) {
   if (!r.ok)
     return json(
       { error: MESSAGES[r.error] ?? "That didn't work." },
-      r.error === "forbidden" ? 403 : 422,
+      // 502: our storage failed (the image was fine); 422: the image itself was refused.
+      r.error === "forbidden" ? 403 : r.error === "storage" ? 502 : 422,
     );
   await expire(t.target, me, (r as { slug?: string }).slug);
   return json({ url: r.url });
