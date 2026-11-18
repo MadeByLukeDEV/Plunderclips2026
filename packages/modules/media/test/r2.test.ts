@@ -41,6 +41,21 @@ describe("R2 errors", () => {
     );
   });
 
+  it("sends the image as plain bytes with a known length (R2 refuses chunked uploads)", async () => {
+    let seen: { body: unknown; headers: Headers } | null = null;
+    vi.stubGlobal("fetch", async (url: string | Request, init?: RequestInit) => {
+      expect(typeof url).toBe("string");
+      seen = { body: init?.body, headers: new Headers(init?.headers) };
+      return new Response("", { status: 200 });
+    });
+    const s = await r2Storage();
+    await s.put(KEY, Buffer.from("hello"), "image/webp");
+    expect(seen!.body).toBeInstanceOf(Uint8Array);
+    expect((seen!.body as Uint8Array).byteLength).toBe(5);
+    expect(seen!.headers.get("authorization")).toMatch(/^AWS4-HMAC-SHA256 /);
+    expect(seen!.headers.get("content-type")).toBe("image/webp");
+  });
+
   it("says when R2 can't be reached at all", async () => {
     vi.stubGlobal("fetch", async () => {
       throw Object.assign(new TypeError("fetch failed"), { cause: { code: "ENOTFOUND" } });

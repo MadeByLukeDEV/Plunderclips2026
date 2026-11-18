@@ -84,6 +84,7 @@ export const R2_HINTS: Record<string, string> = {
   NoSuchBucket:
     "R2_BUCKET doesn't match the bucket name, or it's in another account (R2_ACCOUNT_ID)",
   InvalidBucketName: "R2_BUCKET isn't a valid bucket name",
+  MissingContentLength: "the upload was sent without a size (a bug in the R2 driver)",
 };
 
 /** Cloudflare R2 through its S3 API. Objects are immutable (a new key per upload), cached for a year. */
@@ -98,16 +99,18 @@ function r2(): Storage {
   const base = `https://${e.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${e.R2_BUCKET}`;
   return {
     async put(key, data, contentType) {
-      const res = await reach(
-        client.fetch(`${base}/${key}`, {
-          method: "PUT",
-          body: new Uint8Array(data),
-          headers: {
-            "content-type": contentType,
-            "cache-control": "public, max-age=31536000, immutable",
-          },
-        }),
-      );
+      const body = new Uint8Array(data);
+      // Sign, then send the bytes ourselves: aws4fetch's own fetch wraps the body in a Request,
+      // which Node sends as a chunked stream without Content-Length, and R2 refuses that (411).
+      const signed = await client.sign(`${base}/${key}`, {
+        method: "PUT",
+        body,
+        headers: {
+          "content-type": contentType,
+          "cache-control": "public, max-age=31536000, immutable",
+        },
+      });
+      const res = await reach(fetch(signed.url, { method: "PUT", headers: signed.headers, body }));
       if (!res.ok) throw new Error(`R2 put failed: ${await r2Error(res)}`);
     },
     async remove(key) {
