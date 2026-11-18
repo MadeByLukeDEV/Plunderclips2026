@@ -6,6 +6,7 @@ import { PlatformIcon, type Platform } from "@plunderclips/ui/components/platfor
 import SplitText from "@plunderclips/ui/components/split-text";
 import { Enter } from "@plunderclips/ui/motion/enter";
 import { WordHighlight } from "@plunderclips/ui/motion/word-highlight";
+import type { Metadata } from "next";
 import { art } from "@/lib/art";
 
 /*
@@ -14,6 +15,8 @@ import { art } from "@/lib/art";
   moments: word-highlight (statement). Art: Sea of Thieves artwork by Namaaay (@ArteInFlames) and official Rare screenshots, used under Microsoft's Game Content Usage Rules.
   Layout: fixed header; every section one screen (.screen) with one .wrap on a 12-column grid.
 */
+
+export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 const platforms: { id: Platform; name: string }[] = [
   { id: "twitch", name: "Twitch" },

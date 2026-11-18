@@ -3,6 +3,7 @@ import { Big_Shoulders, DM_Sans, Geist_Mono } from "next/font/google";
 import { MotionProvider } from "@plunderclips/ui/motion/motion-provider";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { JsonLd, siteUrl, SITE_DESCRIPTION, SITE_NAME } from "@/lib/seo";
 import "./globals.css";
 
 const display = Big_Shoulders({
@@ -33,7 +34,8 @@ export const metadata: Metadata = {
   },
   description:
     "Share Sea of Thieves clips from Twitch, YouTube and Kick without an account. Weekly picks, best-of reels and streamers to sail with.",
-  openGraph: { type: "website", siteName: "Plunderclips", images: ["/art/galleon-cove.jpg"] },
+  openGraph: { type: "website", siteName: "Plunderclips", locale: "en_GB" },
+
   twitter: { card: "summary_large_image" },
 };
 
@@ -53,6 +55,30 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         />
       </head>
       <body className="min-h-dvh antialiased">
+        <JsonLd
+          data={{
+            "@context": "https://schema.org",
+            "@graph": [
+              {
+                "@type": "Organization",
+                "@id": siteUrl("/#organization"),
+                name: SITE_NAME,
+                url: siteUrl("/"),
+                logo: siteUrl("/icon-512.png"),
+                description: SITE_DESCRIPTION,
+              },
+              {
+                "@type": "WebSite",
+                "@id": siteUrl("/#website"),
+                name: SITE_NAME,
+                url: siteUrl("/"),
+                description: SITE_DESCRIPTION,
+                inLanguage: "en",
+                publisher: { "@id": siteUrl("/#organization") },
+              },
+            ],
+          }}
+        />
         <MotionProvider>
           <SiteHeader />
           <main id="main" tabIndex={-1} className="outline-none">

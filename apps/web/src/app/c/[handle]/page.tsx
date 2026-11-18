@@ -20,6 +20,7 @@ import { GridSkeleton } from "@/components/clips/grid-skeleton";
 import { Avatar } from "@/components/creators/avatar";
 import { FollowButton } from "@/components/creators/follow-button";
 import { bannerImage } from "@/lib/art";
+import { breadcrumbs, JsonLd, siteUrl } from "@/lib/seo";
 import { creatorPage } from "@/lib/creators-data";
 
 type Props = {
@@ -65,6 +66,34 @@ async function Content({ params, searchParams }: Props) {
 
   return (
     <>
+      <JsonLd
+        data={[
+          {
+            "@context": "https://schema.org",
+            "@type": "ProfilePage",
+            url: siteUrl(`/c/${profile.handle}`),
+            dateCreated: profile.createdAt.toISOString(),
+            mainEntity: {
+              "@type": "Person",
+              "@id": siteUrl(`/c/${profile.handle}#person`),
+              name: profile.displayName,
+              alternateName: `@${profile.handle}`,
+              ...(profile.bio ? { description: profile.bio } : {}),
+              ...(profile.image ? { image: profile.image } : {}),
+              sameAs: profile.channels.map((c) => channelUrl(c)),
+              interactionStatistic: {
+                "@type": "InteractionCounter",
+                interactionType: { "@type": "FollowAction" },
+                userInteractionCount: profile.followerCount,
+              },
+            },
+          },
+          breadcrumbs([
+            ["Creators", "/creators"],
+            [profile.displayName, `/c/${profile.handle}`],
+          ]),
+        ]}
+      />
       <section
         aria-labelledby="creator-name"
         className="pt-[calc(var(--header-h)+16px)] pb-12 md:pb-16"

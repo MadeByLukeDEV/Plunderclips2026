@@ -44,6 +44,7 @@ export {
   getSectionPage,
   getClip,
   getClipCounts,
+  listClipsForSitemap,
   relatedClips,
   sectionsOf,
   addToSection,

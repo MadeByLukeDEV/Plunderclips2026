@@ -751,3 +751,12 @@ export async function clearCrewImage(
   await removeQuietly(row.old);
   return { ok: true, slug: row.slug };
 }
+
+/** Crew pages for the sitemap. */
+export async function listCrewsForSitemap(): Promise<{ slug: string; updatedAt: Date }[]> {
+  return db()
+    .select({ slug: crew.slug, updatedAt: crew.updatedAt })
+    .from(crew)
+    .orderBy(desc(crew.updatedAt))
+    .limit(45_000);
+}

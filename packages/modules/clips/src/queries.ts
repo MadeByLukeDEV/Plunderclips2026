@@ -344,3 +344,15 @@ export async function sectionsOf(clipId: string): Promise<{ slug: string; title:
     .innerJoin(section, eq(section.slug, clipSection.sectionSlug))
     .where(eq(clipSection.clipId, clipId));
 }
+
+/** Published clips for the sitemap, newest first, with when they last changed. */
+export async function listClipsForSitemap(
+  limit = 40_000,
+): Promise<{ id: string; updatedAt: Date }[]> {
+  return db()
+    .select({ id: clip.id, updatedAt: clip.updatedAt })
+    .from(clip)
+    .where(eq(clip.status, "approved"))
+    .orderBy(desc(clip.approvedAt))
+    .limit(Math.min(Math.max(limit, 1), 45_000));
+}

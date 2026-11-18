@@ -160,6 +160,12 @@ and creators) can be done from `/admin/users`.
   a release added a column, the older code ignores it, which is fine. Don't roll back across a
   migration that removed something the old code needs.
 
+## Search engines and AI search
+
+The site serves `/robots.txt`, `/sitemap.xml` (clips, creators, crews and sections, refreshed hourly) and `/llms.txt` (a plain-language map for AI assistants). Pages carry structured data: VideoObject on clip pages, ProfilePage on creator pages, Organization and Event on crew pages, FAQPage on `/submit`, and breadcrumbs. Share cards are generated per clip, creator and crew.
+
+After the first deploy, add the domain in [Google Search Console](https://search.google.com/search-console) and [Bing Webmaster Tools](https://www.bing.com/webmasters) and submit `https://your-domain/sitemap.xml`. Check a clip page in the [Rich Results Test](https://search.google.com/test/rich-results).
+
 ## Images on GHCR (optional)
 
 CI builds both images on every PR and pushes them to
