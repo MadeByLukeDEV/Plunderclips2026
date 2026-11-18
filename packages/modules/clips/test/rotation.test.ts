@@ -42,7 +42,19 @@ describe.skipIf(!url)("weekly rotation and analytics (Postgres)", async () => {
     ids[name] = row!.id;
   }
 
+  const modId = `test-rot-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+
   beforeAll(async () => {
+    // This file's own mod: other test files delete their users while this one runs.
+    await db()
+      .insert(schema.user)
+      .values({
+        id: modId,
+        name: "rotation mod",
+        email: `${modId}@example.test`,
+        role: "mod",
+        updatedAt: new Date(),
+      });
     await insert("top", { voteCount: 9, viewCount: 10 });
     await insert("second", { voteCount: 5, viewCount: 500 });
     await insert("tie-more-views", { voteCount: 1, viewCount: 90 });
@@ -55,21 +67,20 @@ describe.skipIf(!url)("weekly rotation and analytics (Postgres)", async () => {
     await insert("pending", { status: "pending", voteCount: 50 });
     await insert("mod-pick", { voteCount: 0 });
     await insert("excluded", { voteCount: 7 });
-    await db()
-      .insert(schema.clipSection)
-      .values({
-        clipId: ids["mod-pick"]!,
-        sectionSlug: "weekly",
-        period,
-        position: 0,
-        addedByUserId: null,
-      });
+    await db().insert(schema.clipSection).values({
+      clipId: ids["mod-pick"]!,
+      sectionSlug: "weekly",
+      period,
+      position: 0,
+      addedByUserId: modId,
+    });
   });
 
   afterAll(async () => {
     await db()
       .delete(schema.clip)
       .where(like(schema.clip.key, `${run}%`));
+    await db().delete(schema.user).where(eq(schema.user.id, modId));
   });
 
   const weekly = async () =>
@@ -88,22 +99,11 @@ describe.skipIf(!url)("weekly rotation and analytics (Postgres)", async () => {
     ).map((x) => Object.entries(ids).find(([, v]) => v === x.id)?.[0]);
 
   it("fills the week with this week's clips by votes, then views; never pending or last week's", async () => {
-    // Treat the pre-made pick as a mod's (it was inserted without a person to set up the test).
-    const [anyUser] = await db().select({ id: schema.user.id }).from(schema.user).limit(1);
-    if (anyUser)
-      await db()
-        .update(schema.clipSection)
-        .set({ addedByUserId: anyUser.id })
-        .where(eq(schema.clipSection.clipId, ids["mod-pick"]!));
-    await r.excludeFromWeek(db(), "weekly", period, [ids.excluded!], null);
+    await r.excludeFromWeek(db(), "weekly", period, [ids.excluded!], modId);
 
     await r.rotateWeekly(now);
     const list = await weekly();
-    expect(list).toEqual(
-      anyUser
-        ? ["mod-pick", "top", "second", "tie-more-views", "tie-fewer-views"]
-        : ["top", "second", "tie-more-views", "tie-fewer-views", "mod-pick"],
-    );
+    expect(list).toEqual(["mod-pick", "top", "second", "tie-more-views", "tie-fewer-views"]);
   });
 
   it("re-ranks on the next run as votes change, without duplicating", async () => {
