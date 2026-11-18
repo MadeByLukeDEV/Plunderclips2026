@@ -12,14 +12,12 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@plunderclips/clips": "workspace:*",
     "@plunderclips/db": "workspace:*",
     "@plunderclips/media": "workspace:*",
     "@plunderclips/moderation": "workspace:*",
     "@plunderclips/notifications": "workspace:*",
     "@plunderclips/shared": "workspace:*",
     "drizzle-orm": "0.45.4"
-  },
-  "devDependencies": {
-    "@plunderclips/clips": "workspace:*"
   }
 }

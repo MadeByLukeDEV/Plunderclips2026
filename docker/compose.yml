@@ -71,6 +71,16 @@ services:
       start_period: 30s
       retries: 3
 
+  # Background jobs: Twitch/Kick live status every minute, view flushing. Run exactly one.
+  worker:
+    build: { context: .., dockerfile: docker/Dockerfile, target: worker }
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      cache: { condition: service_healthy }
+    environment: *app-env
+    networks: [default, dokploy]
+    restart: unless-stopped
+
   # Bundled Redis, used when REDIS_URL is empty. Named `cache`, not `redis`, so it can never shadow
   # a Redis service called `redis` on dokploy-network.
   cache:

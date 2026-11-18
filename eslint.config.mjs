@@ -17,7 +17,7 @@ export const moduleBoundaries = {
 };
 
 export default defineConfig([
-  globalIgnores(["**/node_modules/**", "**/.next/**", "**/dist/**", "packages/db/migrations/**", "apps/**"]),
+  globalIgnores(["**/node_modules/**", "**/.next/**", "**/dist/**", "packages/db/migrations/**", "apps/web/**"]),
   ...tseslint.configs.recommended,
   { files: ["**/*.ts", "**/*.tsx"], rules: moduleBoundaries },
 ]);

@@ -11,6 +11,7 @@ A Sea of Thieves clip community where streamers promote their content and connec
 ## Architecture (modular monolith)
 
 - `apps/web`: Next.js App Router (cacheComponents on, standalone output).
+- `apps/worker`: background jobs on timers (Twitch/Kick live status every minute, view flushing), compose service `worker`, run with tsx. Add new periodic jobs to its `jobs` list; exactly one worker runs.
 - `packages/modules/<name>`: domain modules (`identity`, `clips`, `creators`, `moderation`, `social`, `notifications`, `media`). `media` (sharp + R2) only processes and stores images; owners and permissions stay in the module that uses it. `notifications` depends only on db and shared, so any module can notify (insert inside the transaction, `announce()` after it commits). **Import only from a module's public entry** (`@plunderclips/clips`), never from `src/` internals. ESLint enforces this.
 - `packages/db`: Drizzle client + schema barrel. Each module's tables live in `src/schema/<module>.ts`.
 - `packages/shared`: lazy env validation (`env()`), Redis client, logger.

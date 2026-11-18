@@ -160,6 +160,10 @@ and creators) can be done from `/admin/users`.
   a release added a column, the older code ignores it, which is fine. Don't roll back across a
   migration that removed something the old code needs.
 
+## Worker (live status)
+
+The `worker` service runs background jobs: it checks every creator's Twitch and Kick channels once a minute for live status (the "Live now" badges and strip), and writes pending view counts to Postgres. It uses the same `TWITCH_CLIENT_ID/SECRET` and `KICK_CLIENT_ID/SECRET` as sign-in; without them, that platform's live status stays off. Run exactly one worker; its logs show each job (`job done` / `job failed`).
+
 ## Search engines and AI search
 
 The site serves `/robots.txt`, `/sitemap.xml` (clips, creators, crews and sections, refreshed hourly) and `/llms.txt` (a plain-language map for AI assistants). Pages carry structured data: VideoObject on clip pages, ProfilePage on creator pages, Organization and Event on crew pages, FAQPage on `/submit`, and breadcrumbs. Share cards are generated per clip, creator and crew.
@@ -240,6 +244,7 @@ Chat streams new messages with server-sent events from `/api/chat/<channel>/stre
 | Sign-in fails with "invalid origin"                  | `BETTER_AUTH_URL` must exactly match the public URL, with `https://` and no trailing slash.                         |
 | Sign-in redirect error at the provider               | The redirect URL registered with the provider doesn't match step 5.                                                 |
 | No bot check on `/submit`, anonymous submits refused | `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` aren't set, or they are Cloudflare's test keys.                     |
+| No "Live" badges                                     | The `worker` service isn't running, or the Twitch/Kick credentials are missing. Check its logs for `job failed`.    |
 | Upload buttons don't show                            | All six `MEDIA_*`/`R2_*` variables must be set (and `MEDIA_DRIVER=r2`).                                             |
 | Uploads fail with "didn't save"                      | The R2 token needs Object Read & Write on that bucket; check the account ID and bucket name.                        |
 | Chat messages only appear after a reload             | Something buffers `/api/chat/*/stream`: check Cloudflare cache rules and any proxy between Traefik and the app.     |
