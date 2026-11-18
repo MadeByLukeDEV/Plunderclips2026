@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  date,
   index,
   integer,
   pgEnum,
@@ -148,3 +149,37 @@ export const clipSection = pgTable(
 
 export type Clip = typeof clip.$inferSelect;
 export type NewClip = typeof clip.$inferInsert;
+
+/**
+ * Clips a mod removed from a weekly section's week: the automatic rotation never adds them back
+ * to that week.
+ */
+export const sectionExclusion = pgTable(
+  "section_exclusion",
+  {
+    sectionSlug: text()
+      .notNull()
+      .references(() => section.slug, { onDelete: "cascade", onUpdate: "cascade" }),
+    period: text().notNull(),
+    clipId: text()
+      .notNull()
+      .references(() => clip.id, { onDelete: "cascade" }),
+    excludedByUserId: text().references(() => user.id, { onDelete: "set null" }),
+    createdAt: timestamp().defaultNow().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.sectionSlug, t.period, t.clipId] })],
+);
+
+/** Each published clip's view and vote totals at the end of each day (UTC), for trends. */
+export const clipStatDaily = pgTable(
+  "clip_stat_daily",
+  {
+    clipId: text()
+      .notNull()
+      .references(() => clip.id, { onDelete: "cascade" }),
+    day: date({ mode: "string" }).notNull(),
+    views: integer().notNull(),
+    votes: integer().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.clipId, t.day] }), index("clip_stat_daily_day_idx").on(t.day)],
+);

@@ -92,6 +92,13 @@
       "when": 1794842165378,
       "tag": "0012_collab",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1795003400596,
+      "tag": "0013_weekly_stats",
+      "breakpoints": true
     }
   ]
 }

@@ -1,11 +1,11 @@
 import { and, asc, count, desc, eq, inArray, lt, ne, or, sql } from "drizzle-orm";
 import { db, schema } from "@plunderclips/db";
 import { announce, insertNotifications } from "@plunderclips/notifications";
-import { isClipTag, isoWeek, type ClipTag } from "@plunderclips/clips";
+import { excludeFromWeek, isClipTag, isoWeek, type ClipTag } from "@plunderclips/clips";
 import { assertCan, type Actor } from "./actor";
 import { audit } from "./audit";
 
-const { clip, clipSection, section, user } = schema;
+const { clip, clipSection, section, sectionExclusion, user } = schema;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const REJECT_REASONS = {
@@ -276,6 +276,17 @@ export async function reviewClip(
       // Picks are replaced: unticking a section removes the clip from it.
       await tx.delete(clipSection).where(eq(clipSection.clipId, clipId));
       if (rows.length) await tx.insert(clipSection).values(rows).onConflictDoNothing();
+      // Picking a clip by hand undoes an earlier "keep it out of this week".
+      for (const r of rows)
+        await tx
+          .delete(sectionExclusion)
+          .where(
+            and(
+              eq(sectionExclusion.sectionSlug, r.sectionSlug),
+              eq(sectionExclusion.period, r.period),
+              eq(sectionExclusion.clipId, clipId),
+            ),
+          );
     }
     if (next === "rejected") await tx.delete(clipSection).where(eq(clipSection.clipId, clipId));
 
@@ -380,10 +391,14 @@ export async function arrangeSection(
             inArray(clipSection.clipId, removed),
           ),
         );
+    // The automatic weekly rotation must not add removed clips back to this week.
+    await excludeFromWeek(tx, slug, period, removed, actor.id);
+    // Arranging a week makes every kept pick the mod's, so the rotation stops reshuffling them
+    // and only fills the slots left over.
     for (const [i, id] of keep.entries())
       await tx
         .update(clipSection)
-        .set({ position: i })
+        .set({ position: i, addedByUserId: actor.id })
         .where(
           and(
             eq(clipSection.sectionSlug, slug),
