@@ -78,6 +78,7 @@ export {
 export { subscribe, type ChatEvent, type ChatMessageWire } from "./chat-bus";
 export {
   emotesForChannel,
+  warmEmotes,
   globalEmotes,
   twitchChannelEmotes,
   parse7tv,

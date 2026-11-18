@@ -13,6 +13,7 @@
     "@plunderclips/clips": "workspace:*",
     "@plunderclips/creators": "workspace:*",
     "@plunderclips/shared": "workspace:*",
+    "@plunderclips/social": "workspace:*",
     "tsx": "4.23.15"
   }
 }
