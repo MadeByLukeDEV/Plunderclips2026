@@ -26,6 +26,7 @@ import { StaffRemoveImage } from "@/components/media/staff-remove-image";
 import { CrewTabs } from "@/components/collab/crew-tabs";
 import { LocalTime } from "@/components/local-time";
 import { bannerImage } from "@/lib/art";
+import { breadcrumbs, JsonLd, siteUrl } from "@/lib/seo";
 import { crewPage } from "@/lib/crews-data";
 
 type Props = { params: Promise<{ slug: string }> };
@@ -70,6 +71,40 @@ async function Content({ params }: Props) {
 
   return (
     <>
+      <JsonLd
+        data={[
+          {
+            "@context": "https://schema.org",
+            "@type": "Organization",
+            "@id": siteUrl(`/crews/${crew.slug}#crew`),
+            name: crew.name,
+            url: siteUrl(`/crews/${crew.slug}`),
+            ...(crew.motto ? { description: crew.motto } : {}),
+            ...(crew.logoUrl ? { logo: crew.logoUrl } : {}),
+            foundingDate: crew.createdAt.toISOString().slice(0, 10),
+            member: members.map((m) => ({
+              "@type": "Person",
+              name: m.displayName,
+              url: siteUrl(`/c/${m.handle}`),
+            })),
+          },
+          ...sessions.map((s) => ({
+            "@context": "https://schema.org",
+            "@type": "Event",
+            name: s.title,
+            startDate: s.startsAt.toISOString(),
+            endDate: new Date(s.startsAt.getTime() + s.durationMin * 60_000).toISOString(),
+            eventAttendanceMode: "https://schema.org/OnlineEventAttendanceMode",
+            eventStatus: "https://schema.org/EventScheduled",
+            location: { "@type": "VirtualLocation", url: siteUrl(`/crews/${crew.slug}`) },
+            organizer: { "@id": siteUrl(`/crews/${crew.slug}#crew`) },
+          })),
+          breadcrumbs([
+            ["Crews", "/crews"],
+            [crew.name, `/crews/${crew.slug}`],
+          ]),
+        ]}
+      />
       <section
         aria-labelledby="crew-name"
         className="pt-[calc(var(--header-h)+16px)] pb-12 md:pb-16"

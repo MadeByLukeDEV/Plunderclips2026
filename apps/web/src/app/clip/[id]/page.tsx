@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { breadcrumbs, isoDuration, JsonLd, siteUrl } from "@/lib/seo";
 import { ExternalLink } from "lucide-react";
 import { CLIP_TAGS } from "@plunderclips/clips";
 import { REPORT_REASONS } from "@plunderclips/moderation";
@@ -32,8 +33,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       type: "video.other",
       title: clip.title,
       description,
-      images: clip.thumbnailUrl ? [{ url: clip.thumbnailUrl }] : undefined,
     },
+    twitter: { card: "summary_large_image", title: clip.title, description },
   };
 }
 
@@ -52,9 +53,56 @@ async function Content({ params }: Props) {
   const { clip, related, sections } = data;
   const meta = platformMeta[clip.platform];
   const duration = formatDuration(clip.durationSeconds);
+  const by = clip.authorName ? ` by ${clip.authorName}` : "";
 
   return (
     <>
+      <JsonLd
+        data={[
+          {
+            "@context": "https://schema.org",
+            "@type": "VideoObject",
+            "@id": siteUrl(`/clip/${clip.id}#video`),
+            name: clip.title,
+            description: `Sea of Thieves clip${by} on ${meta.label}.`,
+            url: siteUrl(`/clip/${clip.id}`),
+            ...(clip.thumbnailUrl ? { thumbnailUrl: [clip.thumbnailUrl] } : {}),
+            ...(clip.approvedAt ? { uploadDate: clip.approvedAt.toISOString() } : {}),
+            ...(isoDuration(clip.durationSeconds)
+              ? { duration: isoDuration(clip.durationSeconds) }
+              : {}),
+            ...(clip.embedSrc ? { embedUrl: clip.embedSrc } : {}),
+            sameAs: clip.canonicalUrl,
+            keywords: ["Sea of Thieves", ...clip.tags].join(", "),
+            ...(clip.authorName
+              ? {
+                  creator: {
+                    "@type": "Person",
+                    name: clip.authorName,
+                    ...(clip.authorUrl ? { url: clip.authorUrl } : {}),
+                  },
+                }
+              : {}),
+            interactionStatistic: [
+              {
+                "@type": "InteractionCounter",
+                interactionType: { "@type": "WatchAction" },
+                userInteractionCount: clip.viewCount,
+              },
+              {
+                "@type": "InteractionCounter",
+                interactionType: { "@type": "LikeAction" },
+                userInteractionCount: clip.voteCount,
+              },
+            ],
+            isPartOf: { "@id": siteUrl("/#website") },
+          },
+          breadcrumbs([
+            ["Clips", "/clips"],
+            [clip.title, `/clip/${clip.id}`],
+          ]),
+        ]}
+      />
       <section
         aria-labelledby="clip-title"
         className="pt-[calc(var(--header-h)+32px)] pb-16 md:pt-[calc(var(--header-h)+48px)] md:pb-20"

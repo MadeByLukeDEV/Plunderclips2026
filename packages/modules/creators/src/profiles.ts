@@ -363,3 +363,14 @@ export async function clearProfileBannerImage(
   await removeQuietly(row.old);
   return { ok: true };
 }
+
+/** Creator pages for the sitemap (banned members' pages are hidden, so left out). */
+export async function listProfilesForSitemap(): Promise<{ handle: string; updatedAt: Date }[]> {
+  return db()
+    .select({ handle: creatorProfile.handle, updatedAt: creatorProfile.updatedAt })
+    .from(creatorProfile)
+    .innerJoin(user, eq(user.id, creatorProfile.userId))
+    .where(visible)
+    .orderBy(desc(creatorProfile.updatedAt))
+    .limit(45_000);
+}

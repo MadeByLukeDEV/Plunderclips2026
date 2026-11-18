@@ -24,6 +24,7 @@ export {
   transferCaptain,
   removeMember,
   disbandCrew,
+  listCrewsForSitemap,
   setCrewImage,
   clearCrewImage,
   CREW_NAME_MAX,

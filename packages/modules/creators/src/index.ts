@@ -25,6 +25,7 @@ export {
   isFollowing,
   listFollowing,
   followerCount,
+  listProfilesForSitemap,
   setProfileBannerImage,
   clearProfileBannerImage,
   type BannerUploadResult,
