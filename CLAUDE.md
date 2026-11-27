@@ -61,3 +61,14 @@ Versions: TypeScript stays on 6.0.x because typescript-eslint doesn't support 7 
 | Spec → plan → build discipline       | `agent-skills` (addyosmani)                  |                                                                                  |
 | Codebase map                         | `graphify`                                   |                                                                                  |
 | Session memory                       | `claude-mem`                                 |                                                                                  |
+
+## Blueprint Command
+
+When asked to "draw a blueprint" or "create a floorplan":
+
+1. Scan the directory structure, entry points, API routes, and database models.
+2. Generate a self-contained `blueprint.html` file using Mermaid.js (with zoom/pan) or an interactive CSS Grid "floorplan" layout where:
+   - Each major module/folder is a "Room"
+   - Data flows and API calls are "Hallways/Pipes"
+   - Each component shows its key functions and dependencies on hover/click.
+3. Open `blueprint.html` in the default browser.
